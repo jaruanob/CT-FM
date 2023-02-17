@@ -32,12 +32,12 @@ system:
   num_workers: 3
   log_input_as: null
   model:
-    _target_: project.models.swav.SwaV
+    _target_: lighter.contrib.models.swav.Swav
     num_ftrs: 512
     out_dim: 128
     n_prototypes: 512
     backbone:
-      _target_: lighter.utils.replace_layer_with_identity
+      _target_: lighter.utils.model.replace_layer_with_identity
       layer_name: fc
       model:
         _target_: torchvision.models.resnet18
@@ -74,7 +74,7 @@ system:
       root: datasets/cifar10
       download: true
       transform:
-        _target_: lighter.transforms.MultiCrop
+        _target_: lighter.contrib.transforms.ssl.MultiCrop
         high_resolution_transforms:
           - _target_: torchvision.transforms.Compose
             transforms:

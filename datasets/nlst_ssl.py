@@ -8,9 +8,7 @@ from loguru import logger
 
 
 class NLSTDataset(torch.utils.data.Dataset):
-
     def __init__(self, root_dir, mode, transform, prototyping_num_scans=None):
-
         assert mode in ["train", "tune", "test"]
         self.mode = mode
         self.root_dir = Path(root_dir)

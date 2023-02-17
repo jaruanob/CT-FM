@@ -1,0 +1,115 @@
+project: /home/ibro/Projects/lighter/projects/ssl-radiologist-lighter
+
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+  benchmark: True
+  max_epochs: 1000
+  accelerator: gpu
+  strategy: null
+  precision: 16
+  logger: null
+  callbacks: null
+
+system:
+  _target_: lighter.LighterSystem
+  batch_size: 64
+  pin_memory: True
+  num_workers: 6
+
+  model:
+    _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
+    ckpt_path: "/home/ibro/Projects/lighter/projects/ssl-radiologist-lighter/logs/20230101_111206/epoch=27-step=252.ckpt"
+    ckpt_to_model_prefix: {"model.backbone" : "encoder"} 
+    model:
+      _target_: monai.networks.nets.FlexibleUNet
+      in_channels: 1
+      out_channels: 1
+      spatial_dims: 3
+      backbone: efficientnet-b4
+
+  criterion:
+    _target_: monai.losses.DiceCELoss
+
+  optimizers:
+    _target_: torch.optim.Adam
+    params: "$@system#model.parameters()"
+    lr: 0.001
+    weight_decay: 0.00001
+
+  train_dataset:
+    _target_: monai.apps.DecathlonDataset
+    cache_num: 0
+    root_dir: /home/ibro/Projects/lighter/.datasets
+    task: Task09_Spleen
+    section: training
+    download: True
+    transform:
+      - _target_: monai.transforms.LoadImaged
+        keys: ["image", "label"]
+
+      - _target_: monai.transforms.EnsureChannelFirstd
+        keys: ["image", "label"]
+
+      # - _target_: monai.transforms.Orientationd
+      #   keys: ["image", "label"] 
+      #   axcodes: "RAS"
+
+      - _target_: monai.transforms.Spacingd
+        keys: ["image", "label"] 
+        pixdim: [1.0, 1.0, 1.0]
+        mode: ["bilinear", "nearest"]
+
+      - _target_: monai.transforms.ScaleIntensityd
+        keys: "image"
+
+      - _target_: monai.transforms.Resized
+        keys: ["image", "label"]
+        spatial_size: [128, 128, 64]
+
+      - _target_: monai.transforms.EnsureTyped
+        keys: ["image", "label"]
+
+      - _target_: project.transforms.monai_related.ExtractFromDict
+        keys: ["image", "label"]
+  
+
+      # - _target_: monai.transforms.ScaleIntensityRanged
+      #   keys: "image"
+        # a_min: -57
+        # a_max: 164
+        # b_min: 0.0
+        # b_max: 1.0
+        # clip: True
+
+      # - _target_: monai.transforms.CropForegroundd
+      #   keys: ["image", "label"] 
+      #   source_key: "label"
+
+      # - _target_: monai.transforms.RandCropByPosNegLabeld
+      #   keys: ["image", "label"]
+      #   label_key: "label"
+      #   spatial_size: [16, 16, 16]
+      #   pos: 1
+      #   neg: 1
+      #   num_samples: 4
+      #   image_key: "image"
+      #   image_threshold: 0
+
+      # - _target_: monai.transforms.ToTensord
+      #   keys: ["image", "label"]
+
+
+  # val_dataset: "%system#train_dataset"
+  # val_dataset#section: validation
+
+  # train_metrics:
+  #   - _target_: torchmetrics.Dice
+  #     num_classes: 1
+
+  # val_metrics: "%system#train_metrics"
+
+  # test_metrics: "%system#train_metrics"
+  
+  # test_dataset: null
+    

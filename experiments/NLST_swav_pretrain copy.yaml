@@ -37,12 +37,12 @@ system:
   # log_input_as: "image_single"
 
   model:
-    _target_: project.models.swav.SwaV
+    _target_: lighter.contrib.models.swav.Swav
     num_ftrs: 2048
     out_dim: 128
     n_prototypes: 512
     backbone:
-      _target_: lighter.utils.replace_layer_with_identity
+      _target_: lighter.utils.model.replace_layer_with_identity
       layer_name: fc
       model:
         _target_: monai.networks.nets.resnet.resnet50
@@ -78,14 +78,14 @@ system:
     transform:
       _target_: torchvision.transforms.Compose
       transforms:
-        # - _target_: lighter.transforms.SitkRandomSpacing
+        # - _target_: lighter.contrib.transforms.sitk.SitkRandomSpacing
         #   prob: 0.25
         #   min_spacing: [0.4, 0.4, 2]
         #   max_spacing: [1, 1, 3]
         #   tolerance: null
         #   default_value: -1024
         #   interpolator: "linear"
-        - _target_: lighter.transforms.SitkToTensor
+        - _target_: lighter.contrib.transforms.sitk.SitkToTensor
           add_channel_dim: True
         - # Scale from -1024 to 3072 to 0-1 and clip outside values
           _target_: monai.transforms.ScaleIntensityRange
@@ -94,7 +94,7 @@ system:
           b_min: 0
           b_max: 1
           clip: True
-        - _target_: lighter.transforms.MultiCrop
+        - _target_: lighter.contrib.transforms.ssl.MultiCrop
           high_resolution_transforms:
             - _target_: torchvision.transforms.Compose
               transforms:

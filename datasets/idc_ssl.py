@@ -8,7 +8,6 @@ from loguru import logger
 
 
 class IDCDataset(torch.utils.data.Dataset):
-
     def __init__(self, root_dir, transform, prototyping_num_scans=None):
         self.scan_paths = sorted(list(Path(root_dir).glob("*.nrrd")))
 
@@ -17,7 +16,6 @@ class IDCDataset(torch.utils.data.Dataset):
             self.scan_paths = self.scan_paths[:prototyping_num_scans]
 
         self.transform = transform
-
 
     def __getitem__(self, idx):
         scan_path = self.scan_paths[idx]
