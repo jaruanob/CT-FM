@@ -14,15 +14,16 @@ CONSTANTS:
 trainer:
   _target_: pytorch_lightning.Trainer
   benchmark: True
-  max_epochs: 1000
+  max_epochs: 1500
   accelerator: gpu
   strategy: null
   precision: 16
   logger: null
-  log_every_n_steps: 50
+  log_every_n_steps: 10
+  check_val_every_n_epoch: 10
   callbacks:
     - _target_: lighter.callbacks.logger.LighterLogger
-      project: ssl-radiologist-eval
+      project: ssl-radiologist-eval-2
       log_dir: /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter/logs/eval
       wandb: True
       input_type: image
@@ -33,7 +34,7 @@ trainer:
       dirpath: "$@trainer#callbacks#0#log_dir + '/checkpoints/3_ssl_weights_10_dataset'"
       monitor: val_loss
       mode: min
-      save_top_k: 10
+      save_top_k: 5
       save_weights_only: True
 
 system:
@@ -44,13 +45,14 @@ system:
 
   model:
     _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
-    ckpt_path: "/home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter/logs/epoch=94-step=855.ckpt"
+    ckpt_path: "/home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter/logs/epoch=94-step=855.ckpt"  # /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter/logs/epoch=27-step=252.ckpt #
     ckpt_to_model_prefix: {"model.backbone" : "encoder"} 
     model:
       _target_: monai.networks.nets.FlexibleUNet
       in_channels: 1
       out_channels: 1
       spatial_dims: 3
+      upsample: deconv
       backbone: efficientnet-b4
   
   post_criterion_activation:
@@ -60,6 +62,7 @@ system:
   criterion:
     _target_: monai.losses.DiceCELoss
     sigmoid: True
+    batch: True
 
   optimizers:
     _target_: torch.optim.SGD
@@ -70,9 +73,19 @@ system:
     nesterov: True
 
   schedulers:
-    _target_: torch.optim.lr_scheduler.LambdaLR
+    _target_: torch.optim.lr_scheduler.SequentialLR
     optimizer: "@system#optimizers"
-    lr_lambda: "$lambda epoch: (1 - epoch / @trainer#max_epochs) ** 0.9"  # PolyLR
+    milestones: [500]
+    schedulers:
+      # Do not change LR until the milestone
+      - _target_: torch.optim.lr_scheduler.LambdaLR
+        optimizer: "@system#optimizers"
+        lr_lambda: "$lambda epoch: 1"
+      # PolyLR, but starts from the milestone. Hence, the -500.
+      - _target_: torch.optim.lr_scheduler.LambdaLR
+        optimizer: "@system#optimizers"
+        lr_lambda: "$lambda epoch: (1 - (epoch - 500) / (@trainer#max_epochs - 500)) ** 0.9"  # PolyLR
+        # lr_lambda: "$lambda epoch: (1 - epoch / @trainer#max_epochs) ** 0.9"  # PolyLR
 
   inferer:
     _target_: monai.inferers.SlidingWindowInferer
@@ -80,6 +93,11 @@ system:
     sw_batch_size: "%system#batch_size"
     overlap: 0.25
     mode: "gaussian"
+  
+  freezer:
+    _target_: lighter.utils.LighterFreezer
+    name_starts_with: encoder
+    until_epoch: 50
 
   train_dataset:
     _disabled_: False
@@ -90,6 +108,7 @@ system:
       root_dir: /home/ibrahim/Projects/lighter/.datasets
       task: Task09_Spleen
       section: training
+      val_frac: 0.2  # 41 train/val -> 33 train, 8 val
       download: True
       transform:
         - _target_: monai.transforms.LoadImaged
@@ -209,6 +228,7 @@ system:
     root_dir: /home/ibrahim/Projects/lighter/.datasets
     task: Task09_Spleen
     section: validation
+    val_frac: 0.2  # 41 train/val -> 33 train, 8 val
     download: True
     transform:
       - _target_: monai.transforms.LoadImaged
