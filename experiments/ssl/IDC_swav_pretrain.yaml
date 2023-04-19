@@ -1,51 +1,55 @@
+imports: "$import pathlib"
 CONSTANTS:
-  HIGH_RES_SIZE: [128, 320, 320]  # [128, 400, 400]
-  LOW_RES_SIZE: [32, 96, 96]  # [32, 128, 128]
+  HIGH_RES_SIZE: [96, 320, 320]  # [128, 400, 400]
+  LOW_RES_SIZE: [32, 64, 64]  # [32, 128, 128]
 
-project: /home/ibro/Projects/lighter/projects/ssl-radiologist-lighter
+project: /app/lighter/projects/ssl-radiologist-lighter
 
 trainer:
   _target_: pytorch_lightning.Trainer
   benchmark: True
   max_epochs: 100
-  accumulate_grad_batches: 256
+  # limit_train_batches: 100
+  accumulate_grad_batches: 4
   accelerator: gpu
-  devices: 4
-  strategy: ddp
-  sync_batchnorm: True
-  precision: 16
-  log_every_n_steps: 1
-  logger:
-    _target_: lighter.logger.LighterLogger
-    save_dir: ${project}/logs/${now:}
-    tensorboard: False
-    wandb: True
-    wandb_project: IDC_swav
-  callbacks:
-    # - _target: pytorch_lightning.callbacks.LearningRateMonitor
-    #   logging_interval: step
-    - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-      dirpath: ${trainer.logger.save_dir}/checkpoints
-      verbose: True
-      save_last: True
-      every_n_epochs: 1
+  #
+  devices: 1
+  # strategy: ddp
+  # sync_batchnorm: True
+  #
+  precision: 16-mixed
+  log_every_n_steps: 10
+  logger: False
+  # callbacks:
+  #   - _target_: lighter.callbacks.logger.LighterLogger
+  #     project: IDC_swav_pretrain
+  #     log_dir: /mnt/data3/IDC_SSL/lighter/projects/ssl-radiologist-lighter/logs/IDC_swav_pretrain
+  #     wandb: True
+  #     input_type: "image"
+  #     max_samples: 1
+  #   - _target_: pytorch_lightning.callbacks.ModelCheckpoint
+  #     dirpath: "/mnt/data3/IDC_SSL/lighter/projects/ssl-radiologist-lighter/checkpoints/IDC_swav_pretrain"
+  #     save_last: True
+  #     verbose: True
+  #     every_n_train_steps: 10000 # 20000 // system.batch_size
+  #     # save_weights_only: True
+  #     # monitor:
 
 system:
   _target_: lighter.LighterSystem
-  batch_size: 2
+  batch_size: 4
   pin_memory: True
   drop_last_batch: True # Used in SSL cases because of negatives
-  num_workers: "${eval: ${trainer.devices} * 3}"
-  # log_input_as: "image_single"
-
+  num_workers: 32
+  
   model:
-    _target_: lighter.contrib.models.swav.Swav
+    _target_: project.models.swav.SwaV
     num_ftrs: 1792
     out_dim: 128
     n_prototypes: 256 # 512
     n_queues: 2
     queue_length: 256 # 512  # this one is an interesting one
-    start_queue_at_epoch: 10
+    start_queue_at_step: 10000  # SwaV starts at the 15th *epoch* in the paper
     backbone:
       _target_: lighter.utils.model.replace_layer_with_identity
       layer_name: _fc
@@ -60,11 +64,11 @@ system:
           in_channels: 1
   
   criterion:
-    _target_: lightly.loss.swav_loss.SwaVLoss
+    _target_: project.loss.swav.SwaVLoss
     temperature: 0.1
     sinkhorn_iterations: 3
     sinkhorn_epsilon: 0.03 # 0.05
-    sinkhorn_gather_distributed: True #"${eval: '${trainer.strategy} == "ddp"'}"
+    sinkhorn_gather_distributed: "$@trainer.strategy == 'ddp'"
 
   optimizers:
     # _target_: torch.optim.Adam
@@ -72,95 +76,95 @@ system:
     # weight_decay: 1e-4
 
     _target_: torch.optim.SGD
+    params: "$@system#model.parameters()"
     lr: 1.5
     weight_decay: 0.000001
     momentum: 0.9
   
   
-  schedulers:
-    # scheduler:
-    #   _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
-    #   factor: 0.9
-    #   min_lr: 0.00001
-    #   patience: 20
-    # interval: step
-    # frequency: 1
-    # monitor: train/loss
-    # strict: True
-      _target_: pl_bolts.optimizers.lr_scheduler.LinearWarmupCosineAnnealingLR
-      warmup_epochs: 10
-      max_epochs: ${trainer.max_epochs}
-      warmup_start_lr: 0.0
-      eta_min: 0.0001
+  # schedulers:
+  #   # scheduler:
+  #   #   _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+  #   #   factor: 0.9
+  #   #   min_lr: 0.00001
+  #   #   patience: 20
+  #   # interval: step
+  #   # frequency: 1
+  #   # monitor: train/loss
+  #   # strict: True
+  #   _target_: torch.optim.lr_scheduler.CosineAnnealingWarmRestarts
+  #   optimizer: "@system#optimizers"
+  #   warmup_epochs: 10
+  #   max_epochs: "@trainer#max_epochs"
+  #   warmup_start_lr: 0.0
+  #   eta_min: 0.0001
+
 
 
   train_metrics: null
-  val_metrics: "${system.train_metrics}"
-  test_metrics: "${system.train_metrics}"
+  val_metrics: "%system#train_metrics"
+  test_metrics: "%system#train_metrics"
   
   train_dataset:
-    _target_: project.datasets.idc_ssl.IDCDataset
-    root_dir: /mnt/data1/IDC_ibro_nrrd/
+    _target_: monai.data.ImageDataset  # project.datasets.image_dataset.ImageDataset 
+    image_files: "$list(pathlib.Path('/app/scans/').glob('**/scan.nrrd'))"
+    reader: NrrdReader
+
     transform:
-      _target_: torchvision.transforms.Compose
+      _target_: monai.transforms.Compose
       transforms:
-        # - _target_: lighter.contrib.transforms.sitk.SitkRandomSpacing
-        #   prob: 0.25
-        #   min_spacing: [0.4, 0.4, 2]
-        #   max_spacing: [1, 1, 3]
-        #   tolerance: null
-        #   default_value: -1024
-        #   interpolator: "linear"
-        - _target_: lighter.contrib.transforms.sitk.SitkToTensor
-          add_channel_dim: True
-        - # Scale from -1024 to 3072 to 0-1 and clip outside values
-          _target_: monai.transforms.ScaleIntensityRange
+        - _target_: monai.transforms.EnsureChannelFirst
+        - _target_: monai.transforms.CropForeground
+        - _target_: monai.transforms.ScaleIntensityRange
           a_min: -1024
           a_max: 3072
           b_min: 0
           b_max: 1
           clip: True
-        - _target_: lighter.contrib.transforms.ssl.MultiCrop
+        - _target_: project.transforms.ssl.MultiCrop
           high_resolution_transforms:
-            - _target_: torchvision.transforms.Compose
+            - _target_: monai.transforms.Compose
               transforms:
-                - _target_: monai.transforms.RandSpatialCrop
-                  roi_size: ${CONSTANTS.HIGH_RES_SIZE}
+                - _target_: project.transforms.monai_related.FilteredRandSpatialCrop # monai.transforms.RandSpatialCrop
+                  allowed_empty_voxel_proportion: 0.3
+                  roi_size: "@CONSTANTS#HIGH_RES_SIZE"
                   random_size: False
                 - _target_: monai.transforms.RandFlip
                   prob: 0.25
                   spatial_axis: 2
-                - # RandHistogramShift serves purpose similar to color jitter
-                  # by modifying the intensity histogram
+                - # RandHistogramShift serves purpose similar to color jitter by modifying the intensity histogram
                   _target_: monai.transforms.RandHistogramShift
                   prob: 0.5
                 - # RandGaussianSmooth is similar to SimCLR GaussianBlur
                   _target_: monai.transforms.RandGaussianSmooth
                   prob: 0.5
                 - _target_: monai.transforms.SpatialPad
-                  spatial_size: ${CONSTANTS.HIGH_RES_SIZE}
-            - ${.[0]}
+                  spatial_size: "@CONSTANTS#HIGH_RES_SIZE"
+                - _target_: monai.transforms.ToTensor
+                  track_meta: False
+            - "%#0"
           low_resolution_transforms:
-            - _target_: torchvision.transforms.Compose
+            - _target_: monai.transforms.Compose
               transforms:
-                - _target_: monai.transforms.RandSpatialCrop
-                  random_size: True
-                  max_roi_size: ${CONSTANTS.LOW_RES_SIZE}
-                  roi_size: [8, 64, 64]
+                - _target_: project.transforms.monai_related.FilteredRandSpatialCrop # monai.transforms.RandSpatialCrop
+                  allowed_empty_voxel_proportion: 0.3
+                  roi_size: "@CONSTANTS#LOW_RES_SIZE"
+                  random_size: False
                 - _target_: monai.transforms.RandFlip
                   prob: 0.25
                   spatial_axis: 2
-                - # RandHistogramShift serves purpose similar to color jitter
-                  # by modifying the intensity histogram
+                - # RandHistogramShift serves purpose similar to color jitter by modifying the intensity histogram
                   _target_: monai.transforms.RandHistogramShift
                   prob: 0.5
                 - # RandGaussianSmooth is similar to SimCLR GaussianBlur
                   _target_: monai.transforms.RandGaussianSmooth
                   prob: 0.5
                 - _target_: monai.transforms.SpatialPad
-                  spatial_size: ${CONSTANTS.LOW_RES_SIZE}
-            - ${.[0]}
-            - ${.[0]}
-            - ${.[0]}
+                  spatial_size: "@CONSTANTS#LOW_RES_SIZE"
+                - _target_: monai.transforms.ToTensor
+                  track_meta: False
+            - "%#0"
+            - "%#0"
+            - "%#0"
   val_dataset: null
   test_dataset: null

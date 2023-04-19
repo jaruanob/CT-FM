@@ -8,13 +8,8 @@ from loguru import logger
 
 
 class IDCDataset(torch.utils.data.Dataset):
-    def __init__(self, root_dir, transform, prototyping_num_scans=None):
-        self.scan_paths = sorted(list(Path(root_dir).glob("*.nrrd")))
-
-        # Reduce the number of datapoints for prototyping
-        if prototyping_num_scans is not None:
-            self.scan_paths = self.scan_paths[:prototyping_num_scans]
-
+    def __init__(self, root_dir, transform):
+        self.scan_paths = sorted(list(Path(root_dir).rglob("*.nrrd")))
         self.transform = transform
 
     def __getitem__(self, idx):
@@ -22,14 +17,14 @@ class IDCDataset(torch.utils.data.Dataset):
         # Load the scan
         try:
             scan = sitk.ReadImage(str(scan_path))
+            scan = torch.tensor(sitk.GetArrayFromImage(scan)).unsqueeze(0)
+            scan = scan.unsqueeze(0)
         except RuntimeError:
             logger.info(f"Failed to load scan {scan_path}, skipping it.")
             return None
 
         label = 0  # Dummy label, no labels used in SSL training
         tensor = self.transform(scan)
-        if isinstance(tensor, (tuple, list)):
-            return *tensor, label
         return tensor, label
 
     def __len__(self):
