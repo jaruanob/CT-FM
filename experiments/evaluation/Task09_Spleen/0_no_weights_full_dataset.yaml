@@ -63,7 +63,7 @@ system:
   optimizers:
     _target_: torch.optim.SGD
     params: "$@system#model.parameters()"
-    lr: 0.01
+    lr: 0.005
     momentum: 0.99
     weight_decay: 0.00003
     nesterov: True
@@ -227,7 +227,7 @@ system:
 
       - _target_: project.transforms.monai_related.SpatialCropAroundBoundingRectd
         crop_keys: ["image", "label"]
-        bbox_key: "label"
+        bbox_key: "image"
 
       - _target_: monai.transforms.Orientationd
         keys: ["image", "label"]

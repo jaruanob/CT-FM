@@ -1,0 +1,179 @@
+imports: "$import pickle"
+version: "lr=0.01_global_grid_size=[3, 7, 7]"
+
+CONSTANTS:
+  HIGH_RES_SIZE: [96, 320, 320]  # [128, 400, 400]
+  LOW_RES_SIZE: [32, 96, 96]  # [32, 128, 128]
+
+project: /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+  benchmark: True
+  max_epochs: 1000
+  limit_train_batches: 100
+  accumulate_grad_batches: 32
+  accelerator: gpu
+  #
+  devices: 2
+  strategy: ddp
+  sync_batchnorm: True
+  #
+  precision: 16-mixed
+  log_every_n_steps: 10
+  logger: False
+  callbacks:
+    - _target_: lighter.callbacks.logger.LighterLogger
+      project: IDC_vicregl_pretrain
+      log_dir: $f"/mnt/data16/IDC_SSL_CT/runs/logs/IDC_vicregl_pretrain/{@version}"
+      wandb: True
+      # input_type: "image"  #["image", null]
+      # max_samples: 1
+    - _target_: pytorch_lightning.callbacks.ModelCheckpoint
+      dirpath: $f"/mnt/data16/IDC_SSL_CT/runs/checkpoints/IDC_vicregl_pretrain/{@version}"
+      save_last: True
+      verbose: True
+      every_n_epochs: 1 #0
+      save_weights_only: True
+      save_top_k: 10
+      monitor: loss
+
+system:
+  _target_: lighter.LighterSystem
+  batch_size: 4
+  pin_memory: True
+  drop_last_batch: True # Used in SSL cases because of negatives
+  num_workers: 8 # 32
+
+  model:
+    _target_: project.models.vicregl.VICRegL
+    num_ftrs: 1792
+    spatial_dims: 3
+    backbone:
+      _target_: lighter.utils.model.remove_n_last_layers_sequentially
+      num_layers: 4
+      model:
+        _target_: monai.networks.nets.EfficientNetBN
+        model_name: efficientnet-b4
+        pretrained: False
+        spatial_dims: 3
+        in_channels: 1
+    # _target_: project.models.vicregl.VICRegL
+    # num_ftrs: 1792
+    # spatial_dims: 3
+    # backbone:
+    #   _target_: lighter.utils.model.replace_layer_with_identity
+    #   layer_name: _avg_pooling
+    #   model:
+    #     _target_: lighter.utils.model.replace_layer_with_identity
+    #     layer_name: _dropout
+    #     model:
+    #       _target_: lighter.utils.model.replace_layer_with_identity
+    #       layer_name: _fc
+    #       model:
+    #         _target_: lighter.utils.model.replace_layer_with_identity
+    #         layer_name: _swish
+    #         model:
+    #           _target_: monai.networks.nets.EfficientNetBN
+    #           model_name: efficientnet-b4
+    #           pretrained: False
+    #           spatial_dims: 3
+    #           in_channels: 1
+      
+  
+  criterion:
+    _target_: project.loss.vicregl.VICRegLLoss
+    gather_distributed: False # "$@trainer.strategy == 'ddp'"
+
+  optimizers:
+    _target_: torch.optim.AdamW
+    params: "$@system#model.parameters()"
+    lr: 0.01
+    weight_decay: 0.000001
+  
+  schedulers:
+    _target_: monai.optimizers.WarmupCosineSchedule
+    optimizer: "@system#optimizers"
+    warmup_steps: 50  # $@trainer#limit_train_batches * 20  # First 20 epochs  # before: * 5
+    t_total: $@trainer#max_epochs  #  * @trainer#limit_train_batches  # Total number of training steps
+
+
+  train_metrics: null
+  val_metrics: "%system#train_metrics"
+  test_metrics: "%system#train_metrics"
+  
+
+  train_dataset:
+    _target_: project.datasets.safe_dataset_wrapper.SafeDatasetWrapper
+    disable: False
+    dataset:
+      _target_: project.datasets.idc_ssl.IDCDataset
+      image_files: "$pickle.load(open('/mnt/data16/IDC_SSL_CT/scan_list.pkl', 'rb'))"  # "$list(pathlib.Path('/mnt/data16/IDC_SSL_CT/scans/').rglob('scan.nrrd'))"
+      transform:
+        _target_: monai.transforms.Compose
+        transforms:
+          - _target_: monai.transforms.LoadImage
+            image_only: True
+          - _target_: monai.transforms.EnsureChannelFirst
+          - _target_: monai.transforms.Orientation
+            axcodes: "LPS"
+          - _target_: monai.transforms.Transpose
+            indices: [0, 3, 2, 1] # cxyz -> czyx
+          - _target_: monai.transforms.CropForeground
+          - _target_: monai.transforms.ScaleIntensityRange
+            a_min: -1024
+            a_max: 3072
+            b_min: 0
+            b_max: 1
+            clip: True
+          - _target_: monai.transforms.SpatialPad
+            spatial_size: "@CONSTANTS#HIGH_RES_SIZE"
+          - _target_: monai.transforms.ToTensor
+          - _target_: project.transforms.ssl.MultiCrop
+            high_resolution_transforms:
+              - _target_: monai.transforms.Compose
+                transforms:
+                  # This transform produces a dict, we start using MONAI's dict transforms after it.
+                  - _target_: project.transforms.vicregl.RandomResizedCropAndFlip3D
+                    roi_size: "@CONSTANTS#HIGH_RES_SIZE"
+                    grid_size: [3, 7, 7]
+                  - # RandHistogramShift serves purpose similar to color jitter by modifying the intensity histogram
+                    _target_: monai.transforms.RandHistogramShiftd
+                    keys: image
+                    prob: 0.5
+                  - # RandGaussianSmooth is similar to SimCLR GaussianBlur
+                    _target_: monai.transforms.RandGaussianSmoothd
+                    keys: image
+                    prob: 0.5
+                  - _target_: monai.transforms.SelectItemsd
+                    keys: ["image", "grid"]
+                  - _target_: monai.transforms.ToTensord
+                    keys: ["image", "grid"]
+                    track_meta: False
+              - "%#0"
+            low_resolution_transforms: null
+              # - _target_: monai.transforms.Compose
+              #   transforms:
+              #     # This transform produces a dict, we start using MONAI's dict transforms after it.
+              #     - _target_: project.transforms.vicregl.RandomResizedCropAndFlip3D
+              #       roi_size: "@CONSTANTS#LOW_RES_SIZE"
+              #       grid_size: [1, 3, 3] # 7
+              #     - # RandHistogramShift serves purpose similar to color jitter by modifying the intensity histogram
+              #       _target_: monai.transforms.RandHistogramShiftd
+              #       keys: image
+              #       prob: 0.5
+              #     - # RandGaussianSmooth is similar to SimCLR GaussianBlur
+              #       _target_: monai.transforms.RandGaussianSmoothd
+              #       keys: image
+              #       prob: 0.5
+              #     - _target_: monai.transforms.ToTensord
+              #       keys: ["image", "grid"]
+              #       track_meta: False
+              # - "%#0"
+              # - "%#0"
+              # - "%#0"
+              # - "%#0"
+              # - "%#0"
+          # - _target_: project.transforms.monai_related.AddNoneTarget
+  val_dataset: null
+  test_dataset: null

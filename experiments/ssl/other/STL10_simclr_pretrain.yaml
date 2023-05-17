@@ -15,7 +15,7 @@ trainer:
     callbacks:
         - _target_: lighter.callbacks.LighterWriter
           write_dir: "$@project + '/predictions' "
-          write_as: ["tensor", "tensor"]
+          write_format: ["tensor", "tensor"]
           write_on: "step" # "epoch"
 
     #     - _target_: pytorch_lightning.callbacks.ModelCheckpoint

@@ -1,19 +1,22 @@
 from typing import Callable, Dict, List, Union
 
 import torch
-from monai.transforms import Transform, BoundingRect, SpatialCropd, RandSpatialCrop
+from monai.transforms import Transform, BoundingRect, SpatialCropd, RandSpatialCrop, MapTransform
 from monai.transforms.utils import  is_positive
 
 from loguru import logger
+
+from lighter.utils.misc import ensure_list
 
 
 class ExtractFromDict(Transform):
     def __init__(self, keys: str) -> None:
         super().__init__()
-        self.keys = keys
+        self.keys = ensure_list(keys)
 
     def __call__(self, data: Dict[str, torch.Tensor]) -> List:
-        return [data[key] for key in self.keys]
+        out = [data[key] for key in self.keys]
+        return out if len(out) > 1 else out[0]
 
 
 class SpatialCropAroundBoundingRectd(Transform):

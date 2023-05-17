@@ -2,7 +2,7 @@ project: /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter
 
 CONSTANTS:
   ORIENTATION: SPL  # Because loading nifti's, this will reorient the axes so that it's the same as when loading nrrd's
-  PATCH_SIZE: [64, 192, 160]
+  PATCH_SIZE: [80, 192, 160]
   SPACING: [1.6, 0.79, 0.79]
   THRESHOLD:
     MIN: -41
@@ -14,13 +14,13 @@ CONSTANTS:
 trainer:
   _target_: pytorch_lightning.Trainer
   benchmark: True
-  max_epochs: 1500
+  max_epochs: 3000
   accelerator: gpu
   strategy: null
   precision: 16
   logger: null
   log_every_n_steps: 10
-  check_val_every_n_epoch: 10
+  check_val_every_n_epoch: 20
   callbacks:
     - _target_: lighter.callbacks.logger.LighterLogger
       project: ssl-radiologist-eval-2
@@ -31,7 +31,7 @@ trainer:
       pred_type: image
       max_samples: 4
     - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-      dirpath: "$@trainer#callbacks#0#log_dir + '/checkpoints/1_ssl_weights_full_dataset'"
+      dirpath: "$@trainer#callbacks#0#log_dir + '/checkpoints/0_no_weights_full_dataset'"
       monitor: val_loss
       mode: min
       save_top_k: 5
@@ -39,21 +39,17 @@ trainer:
 
 system:
   _target_: lighter.LighterSystem
-  batch_size: 8
+  batch_size: 16
   pin_memory: True
   num_workers: 6
 
   model:
-    _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
-    ckpt_path: "/home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter/logs/epoch=94-step=855.ckpt"  # /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter/logs/epoch=27-step=252.ckpt #
-    ckpt_to_model_prefix: {"model.backbone" : "encoder"} 
-    model:
-      _target_: monai.networks.nets.FlexibleUNet
-      in_channels: 1
-      out_channels: 1
-      spatial_dims: 3
-      upsample: deconv
-      backbone: efficientnet-b4
+    _target_: monai.networks.nets.FlexibleUNet
+    in_channels: 1
+    out_channels: 1
+    spatial_dims: 3
+    upsample: deconv
+    backbone: efficientnet-b4
   
   post_criterion_activation:
     _target_: torch.sigmoid
@@ -67,7 +63,7 @@ system:
   optimizers:
     _target_: torch.optim.SGD
     params: "$@system#model.parameters()"
-    lr: 0.01
+    lr: 0.005
     momentum: 0.99
     weight_decay: 0.00003
     nesterov: True
@@ -93,11 +89,6 @@ system:
     sw_batch_size: "%system#batch_size"
     overlap: 0.25
     mode: "gaussian"
-
-  freezer:
-    _target_: lighter.utils.LighterFreezer
-    name_starts_with: encoder
-    until_epoch: 50
 
   train_dataset:
     _disabled_: False
@@ -157,7 +148,7 @@ system:
         spatial_size: "%CONSTANTS#PATCH_SIZE"
         pos: 2
         neg: 1
-        num_samples: 3
+        num_samples: 1
         image_key: "image"
         image_threshold: 0
 

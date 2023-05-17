@@ -9,10 +9,6 @@ torch.set_float32_matmul_precision("medium")
 
 class SwaV(nn.Module):
     """Implements the SwAV (Swapping Assignments between multiple Views of the same image) model.
-    In this implementation, we define when to start queueing features based on the step number instead
-    of the epoch number. In order to mimick the original implementation, check how many steps there are
-    in an epoch and multiply it by the number of epochs .
-
 
     Args:
         backbone (nn.Module): CNN backbone for feature extraction.
@@ -21,17 +17,17 @@ class SwaV(nn.Module):
         n_prototypes (int): Number of prototypes to compute.
         n_queues (int): Number of memory banks (queues). Should be equal to the number of high-resolution inputs.
         queue_length (int, optional): Length of the memory bank. Defaults to 0.
-        start_queue_at_step (int, optional): Number of the step at which SwaV starts using the queued features. Defaults to 0.
+        start_queue_at_epoch (int, optional): Number of the epoch at which SwaV starts using the queued features. Defaults to 0.
         n_steps_frozen_prototypes (int, optional): Number of steps during which we keep the prototypes fixed. Defaults to 0.
     """
     def __init__(self, backbone: nn.Module, num_ftrs: int, out_dim: int,
                  n_prototypes: int, n_queues: int, queue_length: int = 0,
-                 start_queue_at_step: int = 0, n_steps_frozen_prototypes: int = 0):
+                 start_queue_at_epoch: int = 0, n_steps_frozen_prototypes: int = 0):
         super().__init__()
         # Backbone for feature extraction
         self.backbone = backbone
         # Projection head to project features to a lower-dimensional space
-        self.projection_head = SwaVProjectionHead(num_ftrs, num_ftrs, out_dim)
+        self.projection_head = SwaVProjectionHead(num_ftrs, num_ftrs, out_dim)  
         # SwAV Prototypes module for prototype computation
         self.prototypes = SwaVPrototypes(out_dim, n_prototypes, n_steps_frozen_prototypes)
 
@@ -41,15 +37,16 @@ class SwaV(nn.Module):
             self.queues = nn.ModuleList([MemoryBankModule(size=queue_length) for _ in range(n_queues)])
             self.queue_length = queue_length
             self.num_features_queued = 0
-            self.start_queue_at_step = start_queue_at_step
+            self.start_queue_at_epoch = start_queue_at_epoch
 
-    def forward(self, input, step=None):
+    def forward(self, input, epoch=None, step=None):
         """Performs the forward pass for the SwAV model.
 
         Args:
             input (Tuple[List[Tensor], List[Tensor]]): A tuple consisting of a list of high-resolution input images
                 and a list of low-resolution input images.
-            step (int, optional): Current training step. Required if `start_queue_at_step` > 0. Defaults to None.
+            epoch (int, optional): Current training epoch. Required if `start_queue_at_epoch` > 0. Defaults to None.
+            step (int, optional): Current training step. Required if `n_steps_frozen_prototypes` > 0. Defaults to None.
 
         Returns:
             Tuple[List[Tensor], List[Tensor], List[Tensor]]: A Tuple containing lists of high-resolution prototypes,
@@ -68,7 +65,7 @@ class SwaV(nn.Module):
         high_resolution_prototypes = [self.prototypes(x, step) for x in high_resolution_features]
         low_resolution_prototypes = [self.prototypes(x, step) for x in low_resolution_features]
         # Compute prototypes for queued features
-        queue_prototypes = self._get_queue_prototypes(high_resolution_features, step)
+        queue_prototypes = self._get_queue_prototypes(high_resolution_features, epoch)
 
         return high_resolution_prototypes, low_resolution_prototypes, queue_prototypes
 
@@ -90,12 +87,12 @@ class SwaV(nn.Module):
         return features
 
     @torch.no_grad()
-    def _get_queue_prototypes(self, high_resolution_features, step=None):
+    def _get_queue_prototypes(self, high_resolution_features, epoch=None):
         """Compute the queue prototypes for the given high-resolution features.
 
         Args:
             high_resolution_features (List[Tensor]): List of high-resolution feature tensors.
-            step (int, optional): Current step number. Required if `start_queue_at_step` > 0. Defaults to None.
+            epoch (int, optional): Current epoch number. Required if `start_queue_at_epoch` > 0. Defaults to None.
 
         Returns:
             List[Tensor] or None: List of queue prototype tensors if conditions are met, otherwise None.
@@ -123,13 +120,13 @@ class SwaV(nn.Module):
         if self.num_features_queued < self.queue_length:
             return None
 
-        # If loss calculation with queue prototypes starts at a later step,
+        # If loss calculation with queue prototypes starts at a later epoch,
         # just queue the features and return None instead of queue prototypes.
-        if self.start_queue_at_step > 0:
-            if step is None:
-                raise ValueError("The step number must be passed to the `forward()` "
-                                 "method if `start_queue_at_step` is greater than 0.")
-            if step < self.start_queue_at_step:
+        if self.start_queue_at_epoch > 0:
+            if epoch is None:
+                raise ValueError("The epoch number must be passed to the `forward()` "
+                                 "method if `start_queue_at_epoch` is greater than 0.")
+            if epoch < self.start_queue_at_epoch:
                 return None
 
         # Assign prototypes
