@@ -1,9 +1,9 @@
 imports: "$import pickle"
-version: "lr=dynamic_global_grid_size=[3,10,10]_new_efficientnet"
+version: "lr=dynamic_global_grid_size=[12,12,12]_segresnet"
 
 CONSTANTS:
-  HIGH_RES_SIZE: [96, 320, 320]  # [128, 400, 400]
-  HIGH_RES_GRID_SIZE: [3, 10, 10]
+  HIGH_RES_SIZE: [96, 224, 224]  # [128, 400, 400]
+  HIGH_RES_GRID_SIZE: [12, 28, 28]  # // 8
   LOW_RES_SIZE: [32, 96, 96]  # [32, 128, 128]
   LOW_RES_GRID_SIZE: [1, 3, 3]
 
@@ -16,9 +16,9 @@ trainer:
   limit_train_batches: 100
   accelerator: gpu
   #
-  devices: 2
-  strategy: ddp_find_unused_parameters_true
-  sync_batchnorm: True
+  devices: 1
+  # strategy: ddp_find_unused_parameters_true
+  # sync_batchnorm: True
   #
   precision: 16-mixed
   log_every_n_steps: 10
@@ -30,12 +30,12 @@ trainer:
       log_dir: $f"/mnt/data16/IDC_SSL_CT/runs/logs/IDC_vicregl_pretrain/{@version}"
       wandb: True
       # input_type: image
-      # pred_type:
-      #   - "embedding_histogram"
-      #   - null
-      #   - null
-      #   - null
-      # max_samples: 10
+      pred_type:
+        - "embedding_histogram"
+        - null
+        - null
+        - null
+      max_samples: 10
 
     - _target_: pytorch_lightning.callbacks.ModelCheckpoint
       dirpath: $f"/mnt/data16/IDC_SSL_CT/runs/checkpoints/IDC_vicregl_pretrain/{@version}"
@@ -46,21 +46,25 @@ trainer:
 
 system:
   _target_: lighter.LighterSystem
-  batch_size: 4
+  batch_size: 2 #4
   pin_memory: True
   drop_last_batch: True # Used in SSL cases because of negatives
   num_workers: 8 # 32
 
   model:
     _target_: project.models.vicregl.VICRegL
-    num_ftrs: 1792
+    num_ftrs: 256
     spatial_dims: 3
     backbone:
-      _target_: project.models.efficientnet.EfficientNetForPretraining
-      model_name: efficientnet-b4
-      pretrained: False
+      # Follows the specs from https://github.com/Project-MONAI/model-zoo/blob/ff6175a18bda80c2093cd6fb2a493055cccacf70/models/wholeBody_ct_segmentation/configs/train.json#LL24C21-L42C7
+      _target_: project.models.segresnet.SegResNetForPretraining
       spatial_dims: 3
       in_channels: 1
+      out_channels: 1 # Doesn't matter, not training the encoder
+      init_filters: 32
+      blocks_down: [1, 2, 2, 4]
+      blocks_up: [1, 1, 1]
+      dropout_prob: 0.2
   
   criterion:
     _target_: project.loss.vicregl.VICRegLLoss
@@ -70,7 +74,6 @@ system:
     _target_: torch.optim.AdamW
     params: "$@system#model.parameters()"
     # Learning rate calculated as per: `lr = (effective_batch_size) / 256 * base_lr`
-    # Calculated based on the paper's effective_batch_size=384 and lr=0.001
     lr: "$((@system#batch_size * @trainer#devices)/256) * 0.0007"
     weight_decay: 0.000001
   
