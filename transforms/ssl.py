@@ -43,7 +43,7 @@ class MultiCrop:
     """
 
     def __init__(self, high_resolution_transforms: List[Callable],
-                 low_resolution_transforms: Optional[List[Callable]]):
+                 low_resolution_transforms: Optional[List[Callable]] = None):
         self.high_resolution_transforms = ensure_list(high_resolution_transforms)
         self.low_resolution_transforms = ensure_list(low_resolution_transforms)
 
