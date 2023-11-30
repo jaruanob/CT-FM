@@ -1,4 +1,4 @@
-project: /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter
+project: /home/ibrahim/Projects/lighter/projects/lighter-ct-fm
 
 CONSTANTS:
   ORIENTATION: SPL  # Because loading nifti's, this will reorient the axes so that it's the same as when loading nrrd's
@@ -24,7 +24,7 @@ trainer:
   callbacks:
     - _target_: lighter.callbacks.logger.LighterLogger
       project: SSL-Task06-Lung
-      log_dir: /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter/logs/0_no_weights_full_dataset
+      log_dir: /home/ibrahim/Projects/lighter/projects/lighter-ct-fm/logs/0_no_weights_full_dataset
       wandb: True
       input_type: image
       target_type: image

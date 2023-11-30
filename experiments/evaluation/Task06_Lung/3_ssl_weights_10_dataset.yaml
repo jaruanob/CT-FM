@@ -1,4 +1,4 @@
-project: /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter
+project: /home/ibrahim/Projects/lighter/projects/lighter-ct-fm
 
 CONSTANTS:
   ORIENTATION: SPL  # Because loading nifti's, this will reorient the axes so that it's the same as when loading nrrd's
@@ -24,7 +24,7 @@ trainer:
   callbacks:
     - _target_: lighter.callbacks.logger.LighterLogger
       project: ssl-radiologist-eval-2
-      log_dir: /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter/logs/eval
+      log_dir: /home/ibrahim/Projects/lighter/projects/lighter-ct-fm/logs/eval
       wandb: True
       input_type: image
       target_type: image
@@ -45,7 +45,7 @@ system:
 
   model:
     _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
-    ckpt_path: "/home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter/logs/epoch=94-step=855.ckpt"  # /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter/logs/epoch=27-step=252.ckpt #
+    ckpt_path: "/home/ibrahim/Projects/lighter/projects/lighter-ct-fm/logs/epoch=94-step=855.ckpt"  # /home/ibrahim/Projects/lighter/projects/lighter-ct-fm/logs/epoch=27-step=252.ckpt #
     ckpt_to_model_prefix: {"model.backbone" : "encoder"} 
     model:
       _target_: monai.networks.nets.FlexibleUNet

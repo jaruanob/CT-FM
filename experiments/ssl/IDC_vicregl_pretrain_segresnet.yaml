@@ -7,8 +7,7 @@ CONSTANTS:
   LOW_RES_SIZE: [32, 96, 96]  # [32, 128, 128]
   LOW_RES_GRID_SIZE: [1, 3, 3]
 
-project: /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter
-
+project: /mnt/data6/ibro/lighter/projects/lighter-ct-fm
 trainer:
   _target_: pytorch_lightning.Trainer
   benchmark: True

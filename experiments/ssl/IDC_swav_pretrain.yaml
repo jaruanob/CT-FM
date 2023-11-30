@@ -3,7 +3,7 @@ CONSTANTS:
   HIGH_RES_SIZE: [96, 320, 320]  # [128, 400, 400]
   LOW_RES_SIZE: [32, 64, 64]  # [32, 128, 128]
 
-project: /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter
+project: /home/ibrahim/Projects/lighter/projects/lighter-ct-fm
 
 trainer:
   _target_: pytorch_lightning.Trainer
@@ -23,12 +23,12 @@ trainer:
   callbacks:
     - _target_: lighter.callbacks.logger.LighterLogger
       project: IDC_full_swav_pretrain
-      log_dir: /home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter/logs/IDC_swav_pretrain
+      log_dir: /home/ibrahim/Projects/lighter/projects/lighter-ct-fm/logs/IDC_swav_pretrain
       wandb: True
       input_type: "image"
       max_samples: 1
     - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-      dirpath: "/home/ibrahim/Projects/lighter/projects/ssl-radiologist-lighter/checkpoints/IDC_swav_pretrain"
+      dirpath: "/home/ibrahim/Projects/lighter/projects/lighter-ct-fm/checkpoints/IDC_swav_pretrain"
       save_last: True
       verbose: True
       every_n_epochs: 10
