@@ -68,7 +68,7 @@ system:
   scheduler:
     _target_: monai.optimizers.WarmupCosineSchedule
     optimizer: "@system#optimizer"
-    warmup_steps: 50  # First 50 epochs
+    warmup_steps: 10  # First 10 epochs
     t_total: $@trainer#max_epochs
 
   datasets:
