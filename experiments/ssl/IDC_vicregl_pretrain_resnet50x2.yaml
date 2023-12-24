@@ -1,9 +1,9 @@
 imports: "$import pickle"
-version: "lr=dynamic_global_grid_size=[8,16,16]_segresnet_ds_100k"
+version: "lr=dynamic_global_grid_size=[4,8,8]_resnet50_x2_100k"
 
 CONSTANTS:
   HIGH_RES_SIZE: [128, 256, 256]
-  HIGH_RES_GRID_SIZE: [8, 16, 16]  # HIGH_RES_SIZE divided by 16 for this SegResNetDS encoder size
+  HIGH_RES_GRID_SIZE: [4, 8, 8]  # HIGH_RES_SIZE divided by 32 for ResNet50
 
 project: /mnt/data6/ibro/lighter/projects/lighter-ct-fm
 trainer:
@@ -14,7 +14,7 @@ trainer:
   accelerator: gpu
   #
   devices: 4
-  strategy: ddp
+  strategy: ddp #_find_unused_parameters_true
   sync_batchnorm: True
   #
   precision: 16-mixed
@@ -41,18 +41,19 @@ system:
   num_workers: 6 # 32
 
   model:
-    # _target_: torch.compile
-    # model:
     _target_: project.models.vicregl.VICRegL
-    num_ftrs: 512
+    num_ftrs: 4096
     spatial_dims: 3
     backbone:
-      _target_: project.models.segresnetds.SegResNetDSEncoder
-      spatial_dims: 3
-      in_channels: 1
-      out_channels: 1  # Doesn't matter, not training the decoder
-      init_filters: 32
-      blocks_down: [1, 2, 2, 4, 4]
+      _target_: project.models.resnet.ResNet
+      block: "bottleneck"
+      layers: [3, 4, 6, 3]
+      block_inplanes: [64, 128, 256, 512]
+      n_input_channels: 1
+      conv1_t_stride: 2
+      widen_factor: 2
+      feed_forward: False
+      bias_downsample: True
 
   criterion:
     _target_: project.loss.vicregl.VICRegLLoss
