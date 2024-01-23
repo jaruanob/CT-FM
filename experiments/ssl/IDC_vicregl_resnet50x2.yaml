@@ -1,7 +1,6 @@
-imports: "$import pickle"
-version: "lr=dynamic_global_grid_size=[4,8,8]_resnet50_x2_100k"
-
 CONSTANTS:
+  imports: "$import pickle"
+  version: "lr=dynamic_global_grid_size=[4,8,8]_ResNet50x2"
   HIGH_RES_SIZE: [128, 256, 256]
   HIGH_RES_GRID_SIZE: [4, 8, 8]  # HIGH_RES_SIZE divided by 32 for ResNet50
 
@@ -23,11 +22,11 @@ trainer:
   callbacks:
     - _target_: lighter.callbacks.logger.LighterLogger
       project: IDC_vicregl_pretrain
-      log_dir: $f"/mnt/data16/IDC_SSL_CT/runs/logs/IDC_vicregl_pretrain/{@version}"
+      log_dir: $f"/mnt/data16/IDC_SSL_CT/runs/logs/IDC_vicregl_pretrain/{@CONSTANTS#version}"
       wandb: True
 
     - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-      dirpath: $f"/mnt/data16/IDC_SSL_CT/runs/checkpoints/IDC_vicregl_pretrain/{@version}"
+      dirpath: $f"/mnt/data16/IDC_SSL_CT/runs/checkpoints/IDC_vicregl_pretrain/{@CONSTANTS#version}"
       save_last: True
       verbose: True
       every_n_epochs: 1 # 10
