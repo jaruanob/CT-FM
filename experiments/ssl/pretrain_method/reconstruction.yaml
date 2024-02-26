@@ -1,0 +1,59 @@
+CONSTANTS#PATCH_SIZE: [64, 128, 128]
+CONSTANTS#in_channels: 1
+CONSTANTS#version: "recon_coarse_voxel_size_1"
+CONSTANTS#pretrain_method: "reconstruction"
+
+system#model: 
+    _target_: torch.compile
+    model:
+      _target_: monai.networks.nets.SegResNetDS
+      spatial_dims: 3
+      in_channels: "%CONSTANTS#in_channels"
+      out_channels: "%CONSTANTS#in_channels"
+      init_filters: 32
+      blocks_down: [1, 2, 2, 4, 4]
+      dsdepth: 4
+
+system#criterion:
+    _target_: torch.nn.MSELoss # MAE uses MSE
+
+system#datasets#train#dataset#transform:
+          _target_: monai.transforms.Compose
+          transforms:
+            - _target_: monai.transforms.LoadImage
+              image_only: True
+            - _target_: monai.transforms.EnsureChannelFirst
+            - _target_: monai.transforms.Orientation
+              axcodes: "LPS"
+            - _target_: monai.transforms.Transpose
+              indices: [0, 3, 2, 1] # cxyz -> czyx
+            - _target_: monai.transforms.CropForeground
+            - _target_: monai.transforms.ScaleIntensityRange
+              a_min: -1024
+              a_max: 3072
+              b_min: 0
+              b_max: 1
+              clip: True
+            - _target_: monai.transforms.Lambda
+              func: "$lambda x: {'input': x, 'target': x}"
+            - _target_: project.transforms.dynamic_override.DynamicArgOverride
+              override: "${'roi_size' : [torch.abs(x.affine[i, i]) // dim for i, dim in zip(range(3), @CONSTANTS#PATCH_SIZE)]}"
+              transform:
+                - _target_: monai.transforms.RandSpatialCropd
+                  keys: ["input", "target"]
+
+            # - _target_: monai.transforms.RandCoarseDropoutd
+            #   keys: input
+            #   holes: 2
+            #   max_holes: 8
+            #   spatial_size: "$[int(dim*0.1) for dim in @CONSTANTS#PATCH_SIZE]"
+            #   max_spatial_size: "$[int(dim*0.5) for dim in @CONSTANTS#PATCH_SIZE]"
+            #   prob: 1
+            #   fill_value: 0
+            #   _requires_: "$import math"
+            - _target_: monai.transforms.SpatialPadd
+              keys: ["input", "target"]
+              spatial_size: "@CONSTANTS#PATCH_SIZE"
+            - _target_: monai.transforms.ToTensord
+              keys: ["input", "target"]             
+

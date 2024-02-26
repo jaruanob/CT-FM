@@ -1,6 +1,5 @@
-CONSTANTS:
-  pretrain_method: "vicregl"
-  
+CONSTANTS: 
+  imports: "$import pickle"
 project: .
 trainer:
   _target_: pytorch_lightning.Trainer

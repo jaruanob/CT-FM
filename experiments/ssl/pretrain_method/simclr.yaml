@@ -1,6 +1,5 @@
-CONSTANTS#pretrain_method: "vicregl"
 CONSTANTS#HIGH_RES_SIZE: [128, 256, 256]
-CONSTANTS#HIGH_RES_GRID_SIZE:  [128, 256, 256]
+CONSTANTS#HIGH_RES_GRID_SIZE: [8, 16, 16] 
 
 system#model: 
     # _target_: torch.compile
