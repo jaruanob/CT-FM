@@ -173,5 +173,5 @@ class RandomResizedCropAndFlip3D(Transform):
                 y = torch.flip(y, dims=[0])
             if location.horizontal_flip:
                 x = torch.flip(x, dims=[0])
-            grid_z, grid_y, grid_x = torch.meshgrid(z, y, x, indexing="xy")
+            grid_z, grid_y, grid_x = torch.meshgrid(z, y, x, indexing="ij")
             return torch.stack([grid_z, grid_y, grid_x], dim=-1)
