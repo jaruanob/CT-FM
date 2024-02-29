@@ -40,7 +40,7 @@ system#datasets#train#dataset#transform:
               transforms1:
                 _target_: monai.transforms.Compose
                 transforms:
-                    - _target_: project.transforms.simclr.RandomResizedCrop3D
+                    - _target_: project.transforms.ssl.RandomResizedCrop3D
                       size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
                       scale: [0.33, 1.0]
                     - _target_: monai.transforms.RandFlip
