@@ -14,9 +14,9 @@ trainer:
   log_every_n_steps: 100
   logger: 
     _target_: pytorch_lightning.loggers.WandbLogger
-    name: "IDC_{@CONSTANTS#pretrain_method}_pretrain"
+    name: $f"IDC_{@CONSTANTS#pretrain_method}_pretrain"
     project: "IDC_SSL_CT"
-    save_dir: "/mnt/data16_r2d6/IDC_SSL_CT/runs/logs/IDC_{@CONSTANTS#pretrain_method}_pretrain"
+    save_dir: $f"/mnt/data16_r2d6/IDC_SSL_CT/runs/logs/IDC_{@CONSTANTS#pretrain_method}_pretrain"
 
   callbacks:
     - _target_: pytorch_lightning.callbacks.ModelCheckpoint
@@ -28,7 +28,7 @@ trainer:
 
 system:
   _target_: lighter.LighterSystem
-  batch_size: 4
+  batch_size: 2
   pin_memory: True
   drop_last_batch: True # Used in SSL cases because of negatives
   num_workers: 6 # 32

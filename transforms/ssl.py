@@ -1,10 +1,10 @@
 from copy import deepcopy
-from typing import Any, Callable, Optional, Tuple, List
+from typing import Any, Callable, Optional, Tuple, List, Dict
 
 import torch
+from monai.transforms import RandScaleCrop, Resize, Transform
 
 from lighter.utils.misc import ensure_list
-
 
 class Duplicate:
     """Duplicate an input and apply two different transforms. Used for SimCLR primarily.
@@ -51,3 +51,42 @@ class MultiCrop:
         high_resolution_crops = [transform(input) for transform in self.high_resolution_transforms]
         low_resolution_crops = [transform(input) for transform in self.low_resolution_transforms]
         return high_resolution_crops, low_resolution_crops
+
+
+class RandomResizedCrop3D(Transform):
+    """
+    Combines monai's random spatial crop followed by resize to the desired size.
+
+    Modification:
+    1. The spatial crop is done with same dimensions for all the axes
+    2. Handles cases where the image_size is less than the crop_size by choosing
+        the smallest dimension as the random scale.
+
+    """
+
+    def __init__(
+        self,
+        prob: float = 1,
+        size: List[int] = [50, 50, 50],
+        scale: List[float] = [0.5, 1.0],
+    ):
+        """
+        Args:
+            scale (List[int]): Specifies the lower and upper bounds for the random area of the crop,
+             before resizing. The scale is defined with respect to the area of the original image.
+        """
+        super().__init__()
+        self.prob = prob
+        self.scale = scale
+        self.size = size
+
+    def __call__(self, image):
+        if torch.rand(1) < self.prob:
+            random_scale = torch.empty(1).uniform_(*self.scale).item()
+            rand_cropper = RandScaleCrop(random_scale, random_size=False)
+            resizer = Resize(self.size, mode="trilinear")
+
+            for transform in [rand_cropper, resizer]:
+                image = transform(image)
+
+        return image

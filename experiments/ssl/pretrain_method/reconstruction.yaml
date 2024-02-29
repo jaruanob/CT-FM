@@ -1,5 +1,5 @@
-CONSTANTS#SPACING: [1.5, 1.5, 1.5]
-CONSTANTS#PATCH_SIZE: [64, 128, 128]
+CONSTANTS#SPACING: [1.5, 1.5, 1.5] # Resample to voxel spacing in mm
+CONSTANTS#PATCH_SIZE: [64, 128, 128] # Patch size in mm 
 CONSTANTS#ADAPTED_PATCH_SIZE: "$[math.ceil((@CONSTANTS#PATCH_SIZE[i]//@CONSTANTS#SPACING[i])/16) * 16 for i in range(3)]"
 CONSTANTS#in_channels: 1
 CONSTANTS#version: "recon_coarse_voxel_size_1"
