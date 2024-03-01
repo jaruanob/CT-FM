@@ -27,7 +27,7 @@ class IntraSampleNTXEntLoss(nn.Module):
             )
         
 
-    def forward(self, out: tuple):
+    def forward(self, input):
         """
         The forward pass of the IntraSampleNTXEntLoss.
 
@@ -42,21 +42,21 @@ class IntraSampleNTXEntLoss(nn.Module):
             float: Contrastive Cross Entropy Loss value.
         """
 
-        device = out[-1][-1].device
-        batch_size = out[-1][-1].shape[0]
+        device = input[-1][-1].device
+        batch_size = input[-1][-1].shape[0]
 
         overall_loss = 0
         for b in range(batch_size):
             per_sample_loss = 0
-            for s_i, sample in enumerate(out):
+            for s_i, sample in enumerate(input):
                 pos0 = sample[0][b].unsqueeze(0)
                 pos0 = nn.functional.normalize(pos0, dim=1)
 
                 pos1 = sample[1][b].unsqueeze(0)
                 pos1 = nn.functional.normalize(pos1, dim=1)
                 
-                negatives = [out[s_j][0][b] for s_j, _ in enumerate(out) if s_j != s_i]
-                negatives.extend([out[s_j][1][b] for s_j, _  in enumerate(out) if s_j != s_i])
+                negatives = [input[s_j][0][b] for s_j, _ in enumerate(input) if s_j != s_i]
+                negatives.extend([input[s_j][1][b] for s_j, _  in enumerate(input) if s_j != s_i])
 
                 negatives = torch.stack(negatives, dim=0)
                 negatives = nn.functional.normalize(negatives, dim=1)
@@ -71,7 +71,7 @@ class IntraSampleNTXEntLoss(nn.Module):
 
                 per_sample_loss += loss
 
-            per_sample_loss /= len(out)
+            per_sample_loss /= len(input)
             overall_loss += per_sample_loss
 
         overall_loss /= batch_size

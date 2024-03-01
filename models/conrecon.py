@@ -40,6 +40,8 @@ class SimCLR(nn.Module):
         Args:
             input (torch.Tensor or tuple or list): The input data. It can be a tensor, a tuple, or a list. Nested 
                 structures are also supported.
+            target (torch.Tensor or tuple or list): The target data. It can be a tensor, a tuple, or a list. Nested
+                structures are also supported.
 
         Returns:
             torch.Tensor or list: The output of the forward pass. If the input is a tensor, a tensor is returned.
@@ -47,10 +49,9 @@ class SimCLR(nn.Module):
         """
         def tensor_forward(x):
             assert isinstance(x, torch.Tensor)
-            x = self.backbone(x)
-            x = self.average_pool(x).flatten(start_dim=1)
-            x = self.projection_head(x)
-            return x
+            embedding, outputs = self.backbone(x)
+            x = self.projection_head(embedding)
+            return x, outputs
         
         def sequence_forward(x):
             assert isinstance(x, tuple) or isinstance(x, list)

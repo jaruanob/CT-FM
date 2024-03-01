@@ -1,0 +1,11 @@
+CONSTANTS#version: "lr=dynamic_global_grid_size=[8,16,16]_SegResNetDS"
+CONSTANTS#HIGH_RES_GRID_SIZE: [8, 16, 16]
+
+system#model#num_ftrs: 512
+system#model#backbone: 
+    _target_: monai.networks.nets.segresnet_ds.SegResEncoder
+    spatial_dims: 3
+    in_channels: 1
+    init_filters: 32
+    blocks_down: [1, 2, 2, 4, 4]
+    head_module: "$lambda x: x[-1]"

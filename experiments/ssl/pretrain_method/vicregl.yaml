@@ -7,7 +7,6 @@ system#model:
     # model:
     _target_: project.models.vicregl.VICRegL
     num_ftrs: 512
-    spatial_dims: 3
 
 
 system#criterion:
