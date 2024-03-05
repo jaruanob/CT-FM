@@ -11,7 +11,7 @@ trainer:
   strategy: ddp
   sync_batchnorm: True
   precision: 16-mixed
-  log_every_n_steps: 100
+  log_every_n_steps: 10
   logger: 
     _target_: pytorch_lightning.loggers.WandbLogger
     name: $f"IDC_{@CONSTANTS#pretrain_method}_pretrain"

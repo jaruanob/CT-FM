@@ -1,27 +1,29 @@
 import torch
 import torch.nn as nn
 from lightly.models.modules import SimCLRProjectionHead
+from monai.data import decollate_batch
 
 
-class SimCLR(nn.Module):
+class ConReCon(nn.Module):
     """
-    This class implements the SimCLR model.
+    This class implements the ConReCon model, a variant of the SimCLR model + reconstruction.
 
     Attributes:
-        backbone (nn.Module): The backbone network used in the SimCLR model.
+        backbone (nn.Module): The backbone network used in the ConReCon model.
         num_ftrs (int): The number of output features from the backbone network. Default is 32.
         out_dim (int): The dimension of the output representations. Default is 128.
-        projection_head (SimCLRProjectionHead): The projection head used in the SimCLR model.
+        projection_head (SimCLRProjectionHead): The projection head used in the ConReCon model.
     """
 
     def __init__(self, backbone: nn.Module, num_ftrs: int = 32, out_dim: int = 128, spatial_dims: int = 3):
         """
-        Constructs the SimCLR model with a given backbone network, number of features, and output dimension.
+        Constructs the ConReCon model with a given backbone network, number of features, and output dimension.
 
         Args:
             backbone (nn.Module): The backbone network.
             num_ftrs (int, optional): The number of features. Default is 32.
             out_dim (int, optional): The output dimension. Default is 128.
+            spatial_dims (int, optional): The number of spatial dimensions. Default is 3.
         """
         super().__init__()
         self.backbone = backbone
@@ -40,12 +42,10 @@ class SimCLR(nn.Module):
         Args:
             input (torch.Tensor or tuple or list): The input data. It can be a tensor, a tuple, or a list. Nested 
                 structures are also supported.
-            target (torch.Tensor or tuple or list): The target data. It can be a tensor, a tuple, or a list. Nested
-                structures are also supported.
 
         Returns:
-            torch.Tensor or list: The output of the forward pass. If the input is a tensor, a tensor is returned.
-                If the input is a tuple or a list, a list is returned.
+            dict: The output of the forward pass. The dictionary contains two keys: "con" and "recon". 
+                "con" corresponds to the contrastive representation and "recon" corresponds to the reconstruction map.
         """
         def tensor_forward(x):
             assert isinstance(x, torch.Tensor)
@@ -55,16 +55,38 @@ class SimCLR(nn.Module):
         
         def sequence_forward(x):
             assert isinstance(x, tuple) or isinstance(x, list)
-            out = []
+            embeddings = []
+            maps = []
             for sample in x:
                 if isinstance(sample, torch.Tensor):
-                    out.append(tensor_forward(sample))
+                    embedding, outputs = tensor_forward(sample)
+                    embeddings.append(embedding)
+                    maps.append(outputs)
+
                 elif isinstance(sample, tuple) or isinstance(sample, list):
-                    out.append(sequence_forward(sample))
-            return out
+                    embedding, outputs = sequence_forward(sample)
+                    embeddings.append(embedding)
+                    maps.append(outputs)
+
+            return embeddings, maps
 
         if isinstance(input, torch.Tensor):
-            return tensor_forward(input)
+            embedding, map = tensor_forward(input)
         
         if isinstance(input, tuple) or isinstance(input, list):
-            return sequence_forward(input)
+            embedding, map =  sequence_forward(input)
+
+        return {"con": embedding, "recon": map}
+
+
+if __name__ == "__main__":
+    from segresnetds_w_embedding import SegResNetDSwEmbedding
+    # Create a ConReCon model
+
+    backbone = SegResNetDSwEmbedding()
+    model = ConReCon(backbone=backbone, num_ftrs=256, out_dim=128, spatial_dims=3)
+    x = torch.rand(1, 1, 32, 32, 32)
+    batch = (x, x)
+    larger_batch = (batch, batch, batch, batch)
+    out = model(larger_batch)
+    print(len(out["con"]))

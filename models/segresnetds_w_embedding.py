@@ -45,10 +45,9 @@ class SegResNetDSwEmbedding(monai.networks.nets.SegResNetDS):
         outputs.reverse()
 
         # in eval() mode, always return a single final output
-        if not self.training or len(outputs) == 1:
+        if not self.training:
             return outputs[0]
-
-        # return a list of DS outputs
+        
         return embedding, outputs
 
 
