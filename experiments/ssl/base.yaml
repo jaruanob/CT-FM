@@ -49,11 +49,11 @@ system:
 
   datasets:
     train:
-      _target_: project.datasets.safe_dataset_wrapper.SafeDatasetWrapper
-      disable: False
-      dataset:
-        _target_: project.datasets.idc_ssl.IDCDataset
-        # image_files: "$list(pathlib.Path('/mnt/data16/IDC_SSL_CT/scans/').rglob('scan.nrrd'))"
-        image_files: "$[pathlib.Path(str(path).replace('data16', 'data16_r2d6')) for path in pickle.load(open('/mnt/data16_r2d6/IDC_SSL_CT/scan_list.pkl', 'rb'))]"
-        _requires_: "$import pathlib"
+        _target_: monai.data.Dataset
+        data: "$pickle.load(open('/mnt/data16/IDC_SSL_CT/scan_list.pkl', 'rb'))"
+        _requires_: "$import pickle"
+        transform:
+          _target_: monai.transforms.Compose
+          lazy: True
+          transforms:
     
