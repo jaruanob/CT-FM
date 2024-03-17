@@ -1,7 +1,7 @@
-CONSTANTS#version: "lr=dynamic_global_grid_size=[8,16,16]_SegResNetDS"
-CONSTANTS#HIGH_RES_GRID_SIZE: [8, 16, 16]
+CONSTANTS#backbone_name: SegResNetDS
+# Used by VicRegL. For the specified SegResNet architecture, the output features will be the input shape divided by 16.
+CONSTANTS#HIGH_RES_GRID_SIZE: "$[x // 16 for x in @CONSTANTS#HIGH_RES_SIZE]"
 
-system#model#num_ftrs: 512
 system#model#backbone: 
     _target_: monai.networks.nets.segresnet_ds.SegResEncoder
     spatial_dims: 3

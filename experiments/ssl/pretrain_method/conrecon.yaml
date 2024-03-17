@@ -1,16 +1,15 @@
+CONSTANTS#pretrain_method: ConRecon
 CONSTANTS#SPACING: [1.5, 1.5, 1.5] # Resample to voxel spacing in mm
 CONSTANTS#PATCH_SIZE: [64, 128, 128] # Patch size in mm 
 CONSTANTS#ADAPTED_PATCH_SIZE: "$[math.ceil((@CONSTANTS#PATCH_SIZE[i]//@CONSTANTS#SPACING[i])/16) * 16 for i in range(3)]"
 _requires_: "$import math"
-CONSTANTS#version: "single_scan_simclr_pretrain"
-CONSTANTS#pretrain_method: "simclr"
-CONSTANTS#NUM_NEGATIVES: 2
+CONSTANTS#NUM_NEGATIVES: 15
 
 system#model: 
-    _target_: project.models.conrecon.ConReCon
+    _target_: project.models.frameworks.conrecon.ConRecon
 
 system#criterion:
-    _target_: project.loss.conrecon_loss.ConReConLoss
+    _target_: project.loss.conrecon_loss.ConReconLoss
     contrastive_loss:
       _target_: project.loss.intrasample_ntxent_loss.IntraSampleNTXEntLoss
       temperature: 0.1
@@ -19,74 +18,68 @@ system#criterion:
       loss:
           _target_: torch.nn.MSELoss # MAE uses MSE
 
-system#datasets#train:
-      _target_: project.datasets.safe_dataset_wrapper.SafeDatasetWrapper
-      disable: False
-      dataset:
-        _target_: monai.data.Dataset
-        data: "$[pathlib.Path(str(path).replace('data16', 'data16_r2d6')) for path in pickle.load(open('/mnt/data16_r2d6/IDC_SSL_CT/scan_list.pkl', 'rb'))]"
-        _requires_: "$import pathlib"
-        transform:
-          _target_: monai.transforms.Compose
-          map_items: False # This is important to get a flat structure
+system#datasets#train#transform:
+    _target_: monai.transforms.Compose
+    map_items: False
+    transforms:
+        - _target_: monai.transforms.LoadImage
+          reader: ITKReader
+          image_only: True
+        - _target_: monai.transforms.EnsureChannelFirst
+        - _target_: monai.transforms.Orientation
+          axcodes: SPL
+        - _target_: monai.transforms.Spacing
+          pixdim: "@CONSTANTS#SPACING"
+          mode: "bilinear"
+        - _target_: monai.transforms.CropForeground
+        - _target_: monai.transforms.ScaleIntensityRange
+          a_min: -1024
+          a_max: 3072
+          b_min: 0
+          b_max: 1
+          clip: True
+        - _target_: monai.transforms.SpatialPad
+          spatial_size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
+        - _target_: monai.transforms.Compose # Another compose to apply the same transforms to each random sample
           transforms:
-            - _target_: monai.transforms.LoadImage
-              image_only: True
-            - _target_: monai.transforms.EnsureChannelFirst
-            - _target_: monai.transforms.Orientation
-              axcodes: "SPL"
-            - _target_: monai.transforms.Spacing
-              pixdim: "@CONSTANTS#SPACING"
-              mode: "bilinear"
-            - _target_: monai.transforms.CropForeground
-            - _target_: monai.transforms.ScaleIntensityRange
-              a_min: -1024
-              a_max: 3072
-              b_min: 0
-              b_max: 1
-              clip: True
-            - _target_: monai.transforms.SpatialPad
-              spatial_size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
-            - _target_: monai.transforms.Compose # Another compose to apply the same transforms to each random sample
+          - _target_: monai.transforms.RandSpatialCropSamples
+            roi_size: "@CONSTANTS#PATCH_SIZE"
+            num_samples: "$@CONSTANTS#NUM_NEGATIVES + 1"
+          - _target_: project.transforms.ssl.Duplicate
+            transforms1:
+              _target_: monai.transforms.Compose
               transforms:
-              - _target_: monai.transforms.RandSpatialCropSamples
-                roi_size: "@CONSTANTS#PATCH_SIZE"
-                num_samples: "$@CONSTANTS#NUM_NEGATIVES + 1"
-              - _target_: project.transforms.ssl.Duplicate
-                transforms1:
-                  _target_: monai.transforms.Compose
-                  transforms:
-                      - _target_: project.transforms.ssl.RandomResizedCrop3D
-                        size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
-                        scale: [0.33, 1.0]
-                      - _target_: monai.transforms.RandFlip
-                        spatial_axis: [0]
-                        prob: 0.5
-                      - _target_: monai.transforms.RandHistogramShift
-                        prob: 0.5
-                        num_control_points: 5 # Makes distortion stronger
-                      - _target_: monai.transforms.RandGaussianSmooth
-                        prob: 0.5
-                      - _target_: monai.transforms.Lambda
-                        func: "$lambda x: {'input': x, 'target': x.clone()}"
-                      - _target_: monai.transforms.RandSpatialCropd
-                        keys: ["input", "target"]
-                        roi_size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
-                      - _target_: monai.transforms.RandCoarseDropoutd
-                        keys: input
-                        holes: 2
-                        max_holes: 8
-                        spatial_size: "$[int(dim*0.1) for dim in @CONSTANTS#ADAPTED_PATCH_SIZE]"
-                        max_spatial_size: "$[int(dim*0.5) for dim in @CONSTANTS#ADAPTED_PATCH_SIZE]"
-                        prob: 1
-                        fill_value: 0
-                        _requires_: "$import math"
-                      - _target_: monai.transforms.ToTensord
-                        keys: ["input", "target"]
-                        track_meta: False
-                      - _target_: monai.transforms.SelectItemsd
-                        keys: ["input", "target"] 
-                transforms2: "@#transforms1"
-            - _target_: monai.transforms.Lambda 
-              func: "$lambda x: convert(x)" # Convert format from list of list of dicts to dict of list of list
-              _requires_: "$from project.utils import convert"
+                  - _target_: project.transforms.ssl.RandomResizedCrop3D
+                    size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
+                    scale: [0.33, 1.0]
+                  - _target_: monai.transforms.RandFlip
+                    spatial_axis: [0]
+                    prob: 0.5
+                  - _target_: monai.transforms.RandHistogramShift
+                    prob: 0.5
+                    num_control_points: 5 # Makes distortion stronger
+                  - _target_: monai.transforms.RandGaussianSmooth
+                    prob: 0.5
+                  - _target_: monai.transforms.Lambda
+                    func: "$lambda x: {'input': x, 'target': x.clone()}"
+                  - _target_: monai.transforms.RandSpatialCropd
+                    keys: ["input", "target"]
+                    roi_size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
+                  - _target_: monai.transforms.RandCoarseDropoutd
+                    keys: input
+                    holes: 2
+                    max_holes: 8
+                    spatial_size: "$[int(dim*0.1) for dim in @CONSTANTS#ADAPTED_PATCH_SIZE]"
+                    max_spatial_size: "$[int(dim*0.5) for dim in @CONSTANTS#ADAPTED_PATCH_SIZE]"
+                    prob: 1
+                    fill_value: 0
+                    _requires_: "$import math"
+                  - _target_: monai.transforms.ToTensord
+                    keys: ["input", "target"]
+                    track_meta: False
+                  - _target_: monai.transforms.SelectItemsd
+                    keys: ["input", "target"] 
+            transforms2: "%#transforms1"
+        - _target_: monai.transforms.Lambda 
+          func: "$lambda x: convert(x)" # Convert format from list of list of dicts to dict of list of list
+          _requires_: "$from project.utils import convert"

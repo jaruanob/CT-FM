@@ -1,56 +1,64 @@
+CONSTANTS#pretrain_method: SimCLR
+CONSTANTS#NUM_FTRS_BY_BACKBONE: {"SegResNetDS": 512, "ResNet50x2": 4096}
 CONSTANTS#SPACING: [1.5, 1.5, 1.5] # Resample to voxel spacing in mm
 CONSTANTS#PATCH_SIZE: [64, 128, 128] # Patch size in mm 
 CONSTANTS#ADAPTED_PATCH_SIZE: "$[math.ceil((@CONSTANTS#PATCH_SIZE[i]//@CONSTANTS#SPACING[i])/16) * 16 for i in range(3)]"
 _requires_: "$import math"
-CONSTANTS#version: "single_scan_simclr_pretrain"
-CONSTANTS#pretrain_method: "simclr"
-CONSTANTS#NUM_NEGATIVES: 2
+CONSTANTS#NUM_NEGATIVES: 15
+
 
 system#model: 
-    _target_: project.models.simclr.SimCLR
+    _target_: project.models.frameworks.simclr.SimCLR
+    num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#backbone_name]'
+
 
 system#criterion:
     _target_: project.loss.intrasample_ntxent_loss.IntraSampleNTXEntLoss
     temperature: 0.1
 
-system#datasets#train#dataset#transform:
-          _target_: monai.transforms.Compose
-          transforms:
-            - _target_: monai.transforms.LoadImage
-              image_only: True
-            - _target_: monai.transforms.EnsureChannelFirst
-            - _target_: monai.transforms.Orientation
-              axcodes: "SPL"
-            - _target_: monai.transforms.Spacing
-              pixdim: "@CONSTANTS#SPACING"
-              mode: "bilinear"
-            - _target_: monai.transforms.CropForeground
-            - _target_: monai.transforms.ScaleIntensityRange
-              a_min: -1024
-              a_max: 3072
-              b_min: 0
-              b_max: 1
-              clip: True
-            - _target_: monai.transforms.SpatialPad
-              spatial_size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
-            - _target_: monai.transforms.RandSpatialCropSamples
-              roi_size: "@CONSTANTS#PATCH_SIZE"
-              num_samples: "$@CONSTANTS#NUM_NEGATIVES + 1"
-            - _target_: project.transforms.ssl.Duplicate
-              transforms1:
-                _target_: monai.transforms.Compose
-                transforms:
-                    - _target_: project.transforms.ssl.RandomResizedCrop3D
-                      size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
-                      scale: [0.33, 1.0]
-                    - _target_: monai.transforms.RandFlip
-                      spatial_axis: [0]
-                      prob: 0.5
-                    - _target_: monai.transforms.RandHistogramShift
-                      prob: 0.5
-                      num_control_points: 5 # Makes distortion stronger
-                    - _target_: monai.transforms.RandGaussianSmooth
-                      prob: 0.5
-                    - _target_: monai.transforms.ToTensor
-                      track_meta: False
-              transforms2: "@#transforms1"
+
+system#datasets#train#transform:
+    _target_: monai.transforms.Compose
+    map_items: False
+    transforms:
+        - _target_: monai.transforms.LoadImage
+          reader: ITKReader
+          image_only: True
+        - _target_: monai.transforms.EnsureChannelFirst
+        - _target_: monai.transforms.Orientation
+          axcodes: SPL
+        - _target_: monai.transforms.Spacing
+          pixdim: "@CONSTANTS#SPACING"
+          mode: "bilinear"
+        - _target_: monai.transforms.CropForeground
+        - _target_: monai.transforms.ScaleIntensityRange
+          a_min: -1024
+          a_max: 3072
+          b_min: 0
+          b_max: 1
+          clip: True
+        - _target_: monai.transforms.SpatialPad
+          spatial_size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
+        - _target_: monai.transforms.RandSpatialCropSamples
+          roi_size: "@CONSTANTS#PATCH_SIZE"
+          num_samples: "$@CONSTANTS#NUM_NEGATIVES + 1"
+        - _target_: project.transforms.ssl.Duplicate
+          transforms1:
+            _target_: monai.transforms.Compose
+            transforms:
+                - _target_: project.transforms.ssl.RandomResizedCrop3D
+                  size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
+                  scale: [0.33, 1.0]
+                - _target_: monai.transforms.RandFlip
+                  spatial_axis: [0]
+                  prob: 0.5
+                - _target_: monai.transforms.RandHistogramShift
+                  prob: 0.5
+                  num_control_points: 5 # Makes distortion stronger
+                - _target_: monai.transforms.RandGaussianSmooth
+                  prob: 0.5
+                - _target_: monai.transforms.ToTensor
+                  track_meta: False
+          transforms2: "%#transforms1"
+        - _target_: monai.transforms.Lambda
+          func: '$lambda x: {"input": x}'

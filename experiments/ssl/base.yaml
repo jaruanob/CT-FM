@@ -1,5 +1,4 @@
-CONSTANTS: 
-  imports: "$import pickle"
+CONSTANTS: {}
 project: .
 trainer:
   _target_: pytorch_lightning.Trainer
@@ -14,13 +13,13 @@ trainer:
   log_every_n_steps: 10
   logger: 
     _target_: pytorch_lightning.loggers.WandbLogger
-    name: $f"IDC_{@CONSTANTS#pretrain_method}_pretrain"
-    project: "IDC_SSL_CT"
-    save_dir: $f"/mnt/data16_r2d6/IDC_SSL_CT/runs/logs/IDC_{@CONSTANTS#pretrain_method}_pretrain"
+    name: $f"CT_FM_{@CONSTANTS#pretrain_method}_{@CONSTANTS#backbone_name}"
+    project: CT_FM
+    save_dir: $f"/mnt/data16/ibro/IDC_SSL_CT/runs/logs/CT_FM_{@CONSTANTS#pretrain_method}_{@CONSTANTS#backbone_name}"
 
   callbacks:
     - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-      dirpath: $f"/mnt/data16_r2d6/IDC_SSL_CT/runs/checkpoints/IDC_{@CONSTANTS#pretrain_method}_pretrain/{@CONSTANTS#version}"
+      dirpath: $f"/mnt/data16/ibro/IDC_SSL_CT/runs/checkpoints/CT_FM_{@CONSTANTS#pretrain_method}_{@CONSTANTS#backbone_name}"
       save_last: True
       verbose: True
       every_n_epochs: 1 # 10
@@ -28,7 +27,7 @@ trainer:
 
 system:
   _target_: lighter.LighterSystem
-  batch_size: 2
+  batch_size: 4
   pin_memory: True
   drop_last_batch: True # Used in SSL cases because of negatives
   num_workers: 6 # 32
@@ -46,14 +45,10 @@ system:
     warmup_steps: 10  # First 10 epochs
     t_total: $@trainer#max_epochs
 
-
   datasets:
     train:
         _target_: monai.data.Dataset
-        data: "$pickle.load(open('/mnt/data16/IDC_SSL_CT/scan_list.pkl', 'rb'))"
+        data: "$pickle.load(open('/mnt/data16/ibro/IDC_SSL_CT/dataset_list.pkl', 'rb'))"
         _requires_: "$import pickle"
         transform:
-          _target_: monai.transforms.Compose
-          lazy: True
-          transforms:
     

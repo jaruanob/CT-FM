@@ -11,8 +11,9 @@ class Duplicate:
     """
 
     def __init__(self,
-                 transforms1: Optional[Callable] = None,
-                 transforms2: Optional[Callable] = None):
+            transforms1: Optional[Callable] = None,
+            transforms2: Optional[Callable] = None
+        ):
         """Duplicates an input and applies the given transformations to each copy separately.
         Args:
             transforms1 (Optional[Callable], optional): _description_. Defaults to None.
@@ -50,7 +51,7 @@ class MultiCrop:
     def __call__(self, input):
         high_resolution_crops = [transform(input) for transform in self.high_resolution_transforms]
         low_resolution_crops = [transform(input) for transform in self.low_resolution_transforms]
-        return high_resolution_crops, low_resolution_crops
+        return {"high_resolution_crops": high_resolution_crops, "low_resolution_crops": low_resolution_crops}
 
 
 class RandomResizedCrop3D(Transform):

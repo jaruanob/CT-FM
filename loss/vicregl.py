@@ -1,9 +1,9 @@
 
 import torch
 from torch import Tensor
-from lightly import loss as lightly_loss
+import lightly.loss.vicregl_loss
 
-class VICRegLLoss(lightly_loss.vicregl_loss.VICRegLLoss):
+class VICRegLLoss(lightly.loss.vicregl_loss.VICRegLLoss):
 
     # IMPORTANT: this is a method that was changed
     def forward(self, out):

@@ -1,12 +1,12 @@
-CONSTANTS#pretrain_method: "vicregl"
+CONSTANTS#pretrain_method: VICRegL
+CONSTANTS#NUM_FTRS_BY_BACKBONE: {"SegResNetDS": 512, "ResNet50x2": 4096}
 CONSTANTS#HIGH_RES_SIZE: [128, 256, 256]
-CONSTANTS#HIGH_RES_GRID_SIZE:  [128, 256, 256]
+CONSTANTS#HIGH_RES_GRID_SIZE:  # Depends on the patch size and the model's receptive field
 
-system#model: 
-    # _target_: torch.compile
-    # model:
-    _target_: project.models.vicregl.VICRegL
-    num_ftrs: 512
+
+system#model:
+    _target_: project.models.frameworks.vicregl.VICRegL
+    num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#backbone_name]'
 
 
 system#criterion:
@@ -14,46 +14,47 @@ system#criterion:
     gather_distributed: True
 
 
-system#datasets#train#dataset#transform:
-          _target_: monai.transforms.Compose
-          transforms:
-            - _target_: monai.transforms.LoadImage
-              image_only: True
-            - _target_: monai.transforms.EnsureChannelFirst
-            - _target_: monai.transforms.Orientation
-              axcodes: "LPS"
-            - _target_: monai.transforms.Transpose
-              indices: [0, 3, 2, 1] # cxyz -> czyx
-            - _target_: monai.transforms.CropForeground
-            - _target_: monai.transforms.ScaleIntensityRange
-              a_min: -1024
-              a_max: 3072
-              b_min: 0
-              b_max: 1
-              clip: True
-            - _target_: monai.transforms.SpatialPad
-              spatial_size: "@CONSTANTS#HIGH_RES_SIZE"
-            - _target_: monai.transforms.ToTensor
-            - _target_: project.transforms.ssl.MultiCrop
-              high_resolution_transforms:
-                - _target_: monai.transforms.Compose
-                  transforms:
-                    # This transform produces a dict, we start using MONAI's dict transforms after it.
-                    - _target_: project.transforms.vicregl.RandomResizedCropAndFlip3D
-                      roi_size: "@CONSTANTS#HIGH_RES_SIZE"
-                      grid_size: "@CONSTANTS#HIGH_RES_GRID_SIZE"
-                    - # RandHistogramShift serves purpose similar to color jitter by modifying the intensity histogram
-                      _target_: monai.transforms.RandHistogramShiftd
-                      keys: image
-                      prob: 0.5
-                    - # RandGaussianSmooth is similar to SimCLR GaussianBlur
-                      _target_: monai.transforms.RandGaussianSmoothd
-                      keys: image
-                      prob: 0.5
-                    - _target_: monai.transforms.SelectItemsd
-                      keys: ["image", "grid"]
-                    - _target_: monai.transforms.ToTensord
-                      keys: ["image", "grid"]
-                      track_meta: False
-                - "%#0"
+system#datasets#train#transform:
+    _target_: monai.transforms.Compose
+    transforms:
+        - _target_: monai.transforms.LoadImage
+          reader: ITKReader
+          image_only: True
+        - _target_: monai.transforms.EnsureChannelFirst
+        - _target_: monai.transforms.Orientation
+          axcodes: SPL
+        - _target_: monai.transforms.CropForeground
+        - _target_: monai.transforms.ScaleIntensityRange
+          a_min: -1024
+          a_max: 3072
+          b_min: 0
+          b_max: 1
+          clip: True
+        - _target_: monai.transforms.SpatialPad
+          spatial_size: "@CONSTANTS#HIGH_RES_SIZE"
+        - _target_: monai.transforms.ToTensor
+        - _target_: project.transforms.ssl.MultiCrop
+          high_resolution_transforms:
+            - _target_: monai.transforms.Compose
+              transforms:
+                # This transform produces a dict, we start using MONAI's dict transforms after it.
+                - _target_: project.transforms.vicregl.RandomResizedCropAndFlip3D
+                  roi_size: "@CONSTANTS#HIGH_RES_SIZE"
+                  grid_size: "@CONSTANTS#HIGH_RES_GRID_SIZE"
+                - # RandHistogramShift serves purpose similar to color jitter by modifying the intensity histogram
+                  _target_: monai.transforms.RandHistogramShiftd
+                  keys: image
+                  prob: 0.5
+                - # RandGaussianSmooth is similar to SimCLR GaussianBlur
+                  _target_: monai.transforms.RandGaussianSmoothd
+                  keys: image
+                  prob: 0.5
+                - _target_: monai.transforms.SelectItemsd
+                  keys: ["image", "grid"]
+                - _target_: monai.transforms.ToTensord
+                  keys: ["image", "grid"]
+                  track_meta: False
+            - "%#0"
+        - _target_: monai.transforms.Lambda
+          func: '$lambda x: {"input": x}'
 

@@ -18,13 +18,14 @@ class VICRegL(nn.Module):
 
 
     def forward(self, input):
-        high_resolution, low_resolution = input
+        high_resolution_crops = input["high_resolution_crops"]
+        low_resolution_crops = input["low_resolution_crops"]
 
-        global_views_features = [self.subforward(data["image"]) for data in high_resolution]
-        global_grids = [data["grid"] for data in high_resolution]
+        global_views_features = [self.subforward(data["image"]) for data in high_resolution_crops]
+        global_grids = [data["grid"] for data in high_resolution_crops]
 
-        local_views_features = [self.subforward(data["image"]) for data in low_resolution]
-        local_grids = [data["grid"] for data in low_resolution]
+        local_views_features = [self.subforward(data["image"]) for data in low_resolution_crops]
+        local_grids = [data["grid"] for data in low_resolution_crops]
 
         return global_views_features, global_grids, local_views_features, local_grids
 
