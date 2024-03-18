@@ -1,10 +1,9 @@
 CONSTANTS#pretrain_method: SimCLR
-CONSTANTS#NUM_FTRS_BY_BACKBONE: {"SegResNetDS": 512, "ResNet50x2": 4096}
 CONSTANTS#SPACING: [1.5, 1.5, 1.5] # Resample to voxel spacing in mm
 CONSTANTS#PATCH_SIZE: [64, 128, 128] # Patch size in mm 
 CONSTANTS#ADAPTED_PATCH_SIZE: "$[math.ceil((@CONSTANTS#PATCH_SIZE[i]//@CONSTANTS#SPACING[i])/16) * 16 for i in range(3)]"
 _requires_: "$import math"
-CONSTANTS#NUM_NEGATIVES: 15
+CONSTANTS#NUM_CONTRASTIVE_CROPS: 8
 
 
 system#model: 
@@ -22,8 +21,8 @@ system#datasets#train#transform:
     # A parent monai Compose would force all children to have its map_items.
     _target_: torchvision.transforms.Compose
     transforms:
-
         - _target_: monai.transforms.Compose
+          # `map_items=True` - When input to a Transform is a list, apply the transform to each element of the list.
           map_items: True
           transforms:
               - _target_: monai.transforms.LoadImage
@@ -33,7 +32,7 @@ system#datasets#train#transform:
               - _target_: monai.transforms.Orientation
                 axcodes: SPL
               - _target_: monai.transforms.Spacing
-                pixdim: "@CONSTANTS#SPACING"
+                pixdim: "%CONSTANTS#SPACING"
                 mode: "bilinear"
               - _target_: monai.transforms.CropForeground
               - _target_: monai.transforms.ScaleIntensityRange
@@ -43,13 +42,16 @@ system#datasets#train#transform:
                 b_max: 1
                 clip: True
               - _target_: monai.transforms.SpatialPad
-                spatial_size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
+                spatial_size: "%CONSTANTS#ADAPTED_PATCH_SIZE"
+              # Turn into a dict of views
               - _target_: monai.transforms.Lambda
                 func: '$lambda x: {"view_0": x}'
+              # From this point it's not a Tensor anymore, but a list of NUM_CONTRASTIVE_CROPS Tensors
               - _target_: monai.transforms.RandSpatialCropSamplesd
                 keys: view_0
-                roi_size: "@CONSTANTS#PATCH_SIZE"
-                num_samples: "$@CONSTANTS#NUM_NEGATIVES + 1"
+                roi_size: "%CONSTANTS#PATCH_SIZE"
+                num_samples: "%CONSTANTS#NUM_CONTRASTIVE_CROPS"
+              # Duplicate the view
               - _target_: monai.transforms.CopyItemsd
                 keys: view_0
                 names: view_1
@@ -57,7 +59,7 @@ system#datasets#train#transform:
                 keys: ["view_0", "view_1"]
                 transform:
                     _target_: project.transforms.ssl.RandomResizedCrop
-                    size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
+                    size: "%CONSTANTS#ADAPTED_PATCH_SIZE"
                     scale: [0.33, 1.0]
               - _target_: monai.transforms.RandFlipd
                 keys: ["view_0", "view_1"]
@@ -76,9 +78,9 @@ system#datasets#train#transform:
               - _target_: monai.transforms.Lambda
                 func: '$lambda x: (x["view_0"], x["view_1"])'
 
+        # Disable map_items so that the whole list of NUM_CONTRASTIVE_CROPS Tensors is wrapped into input instead of its elements
         - _target_: monai.transforms.Compose
           map_items: False
           transforms:
               - _target_: monai.transforms.Lambda
                 func: '$lambda x: {"input": x}'
-        

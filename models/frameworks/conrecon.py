@@ -80,6 +80,8 @@ class ConRecon(nn.Module):
 
 
 if __name__ == "__main__":
+    import sys
+    sys.path.append("../backbones")
     from segresnetds_w_embedding import SegResNetDSwEmbedding
     # Create a ConRecon model
 

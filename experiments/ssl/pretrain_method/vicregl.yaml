@@ -1,5 +1,4 @@
 CONSTANTS#pretrain_method: VICRegL
-CONSTANTS#NUM_FTRS_BY_BACKBONE: {"SegResNetDS": 512, "ResNet50x2": 4096}
 CONSTANTS#HIGH_RES_SIZE: [128, 256, 256]
 CONSTANTS#HIGH_RES_GRID_SIZE:  # Depends on the patch size and the model's receptive field
 
@@ -31,7 +30,7 @@ system#datasets#train#transform:
           b_max: 1
           clip: True
         - _target_: monai.transforms.SpatialPad
-          spatial_size: "@CONSTANTS#HIGH_RES_SIZE"
+          spatial_size: "%CONSTANTS#HIGH_RES_SIZE"
         - _target_: monai.transforms.ToTensor
         - _target_: project.transforms.ssl.MultiCrop
           high_resolution_transforms:
@@ -39,8 +38,8 @@ system#datasets#train#transform:
               transforms:
                 # This transform produces a dict, we start using MONAI's dict transforms after it.
                 - _target_: project.transforms.vicregl.RandomResizedCropAndFlip3D
-                  roi_size: "@CONSTANTS#HIGH_RES_SIZE"
-                  grid_size: "@CONSTANTS#HIGH_RES_GRID_SIZE"
+                  roi_size: "%CONSTANTS#HIGH_RES_SIZE"
+                  grid_size: "%CONSTANTS#HIGH_RES_GRID_SIZE"
                 - # RandHistogramShift serves purpose similar to color jitter by modifying the intensity histogram
                   _target_: monai.transforms.RandHistogramShiftd
                   keys: image

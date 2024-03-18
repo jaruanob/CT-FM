@@ -7,47 +7,50 @@ _requires_: "$import math"
 system#model:
     _target_: project.models.frameworks.reconstruction.Reconstruction
 
+
 system#criterion:
     _target_: monai.losses.DeepSupervisionLoss
     loss:
         _target_: torch.nn.MSELoss # Masked autoencoders use MSE
 
 
-system#datasets#train#transform#transforms:
-    - _target_: monai.transforms.LoadImage
-      reader: ITKReader
-      image_only: True
-    - _target_: monai.transforms.EnsureChannelFirst
-    - _target_: monai.transforms.Orientation
-      axcodes: SPL
-    - _target_: monai.transforms.Spacing
-      pixdim: "@CONSTANTS#SPACING"
-      mode: "bilinear"
-    - _target_: monai.transforms.CropForeground
-    - _target_: monai.transforms.ScaleIntensityRange
-      a_min: -1024
-      a_max: 3072
-      b_min: 0
-      b_max: 1
-      clip: True
-    - _target_: monai.transforms.Lambda
-      func: '$lambda x: {"input": x, "target": x.clone()}'
-    - _target_: monai.transforms.RandSpatialCropd
-      keys: ["input", "target"]
-      roi_size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
-    - _target_: monai.transforms.RandCoarseDropoutd
-      keys: input
-      holes: 2
-      max_holes: 8
-      spatial_size: "$[int(dim*0.1) for dim in @CONSTANTS#ADAPTED_PATCH_SIZE]"
-      max_spatial_size: "$[int(dim*0.5) for dim in @CONSTANTS#ADAPTED_PATCH_SIZE]"
-      prob: 1
-      fill_value: 0
-    - _target_: monai.transforms.SpatialPadd
-      keys: ["input", "target"]
-      spatial_size: "@CONSTANTS#ADAPTED_PATCH_SIZE"
-    - _target_: monai.transforms.ToTensord
-      keys: ["input", "target"]
-      track_meta: False
-    - _target_: monai.transforms.SelectItemsd
-      keys: ["input", "target"]
+system#datasets#train#transform:
+    _target_: monai.transforms.Compose
+    transforms:
+        - _target_: monai.transforms.LoadImage
+          reader: ITKReader
+          image_only: True
+        - _target_: monai.transforms.EnsureChannelFirst
+        - _target_: monai.transforms.Orientation
+          axcodes: SPL
+        - _target_: monai.transforms.Spacing
+          pixdim: "%CONSTANTS#SPACING"
+          mode: "bilinear"
+        - _target_: monai.transforms.CropForeground
+        - _target_: monai.transforms.ScaleIntensityRange
+          a_min: -1024
+          a_max: 3072
+          b_min: 0
+          b_max: 1
+          clip: True
+        - _target_: monai.transforms.Lambda
+          func: '$lambda x: {"input": x, "target": x.clone()}'
+        - _target_: monai.transforms.RandSpatialCropd
+          keys: ["input", "target"]
+          roi_size: "%CONSTANTS#ADAPTED_PATCH_SIZE"
+        - _target_: monai.transforms.RandCoarseDropoutd
+          keys: input
+          holes: 2
+          max_holes: 8
+          spatial_size: "$[int(dim*0.1) for dim in @CONSTANTS#ADAPTED_PATCH_SIZE]"
+          max_spatial_size: "$[int(dim*0.5) for dim in @CONSTANTS#ADAPTED_PATCH_SIZE]"
+          prob: 1
+          fill_value: 0
+        - _target_: monai.transforms.SpatialPadd
+          keys: ["input", "target"]
+          spatial_size: "%CONSTANTS#ADAPTED_PATCH_SIZE"
+        - _target_: monai.transforms.ToTensord
+          keys: ["input", "target"]
+          track_meta: False
+        - _target_: monai.transforms.SelectItemsd
+          keys: ["input", "target"]
