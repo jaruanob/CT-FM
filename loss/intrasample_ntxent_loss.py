@@ -1,7 +1,8 @@
 from typing import List
+
 import torch
-from torch import nn
 from torch import distributed as torch_dist
+from torch import nn
 
 
 class IntraSampleNTXEntLoss(nn.Module):
@@ -35,24 +36,24 @@ class IntraSampleNTXEntLoss(nn.Module):
         Returns:
             float: Contrastive Cross Entropy Loss value.
         """
-        # Dimensions: [views, crops, batch size, channels, (depth), height, width]
+        # Dimensions: [crops, views, batch size, channels, (depth), height, width]
         batch_size = input[-1][-1].shape[0]
-        num_crops = len(input[-1])
+        num_crops = len(input)
 
         loss = 0
         for b in range(batch_size):
             per_sample_loss = 0
             for i in range(num_crops):
-                # Positives: both views (0 and 1), same crop (i), from the same image (b - batch index)
-                positive_0 = input[0][i][b].unsqueeze(0)
-                positive_1 = input[1][i][b].unsqueeze(0)
+                # Positives: same crop (i), both views (0 and 1), from the same image (b - batch index)
+                positive_0 = input[i][0][b].unsqueeze(0)
+                positive_1 = input[i][1][b].unsqueeze(0)
 
-                # Negatives: both views (0 and 1), all other crops (j != i), from the same image (b - batch index)
+                # Negatives: all other crops (j != i), both views (0 and 1), from the same image (b - batch index)
                 negatives = []
                 for j in range(num_crops):
                     if j != i:
-                        negatives.append(input[0][j][b])
-                        negatives.append(input[1][j][b])
+                        negatives.append(input[j][0][b])
+                        negatives.append(input[j][1][b])
                 negatives = torch.stack(negatives, dim=0)
 
                 positive_0 = nn.functional.normalize(positive_0, dim=1)
