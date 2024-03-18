@@ -31,12 +31,12 @@ class IntraSampleNTXEntLoss(nn.Module):
 
         Args:
             input (list of list of Tensors): The input data in the following format:
-                List [views], List [crops], Tensor [BC(D)HW].
+                List [crops], List [views], Tensor [BC(D)HW].
                 Each batch index represents a different image.
         Returns:
             float: Contrastive Cross Entropy Loss value.
         """
-        # Dimensions: [crops, views, batch size, channels, (depth), height, width]
+        # Dimensions: List [crops], List [views], Tensor [BC(D)HW].
         batch_size = input[-1][-1].shape[0]
         num_crops = len(input)
 
@@ -57,7 +57,7 @@ class IntraSampleNTXEntLoss(nn.Module):
                 negatives = torch.stack(negatives, dim=0)
 
                 positive_0 = nn.functional.normalize(positive_0, dim=1)
-                positive_1 = nn.functional.normalize(positive_1, dim=1)    
+                positive_1 = nn.functional.normalize(positive_1, dim=1)
                 negatives = nn.functional.normalize(negatives, dim=1)
 
                 sim_pos = torch.einsum("nc,nc->n", positive_0, positive_1).unsqueeze(-1)

@@ -9,9 +9,9 @@ trainer:
     max_epochs: 500
     limit_train_batches: 500
     accelerator: gpu
-    devices: 4
-    strategy: ddp
-    sync_batchnorm: True
+    devices: 1
+    # strategy: ddp
+    # sync_batchnorm: True
     precision: 16-mixed
     log_every_n_steps: 10
     logger: 
