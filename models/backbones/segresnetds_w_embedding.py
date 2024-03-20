@@ -7,13 +7,7 @@ import monai
 class SegResNetDSwEmbedding(monai.networks.nets.SegResNetDS):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.spatial_dims == 2:
-            self.average_pool = nn.AdaptiveAvgPool2d(output_size=(1, 1))
-        elif self.spatial_dims == 3:
-            self.average_pool = nn.AdaptiveAvgPool3d(output_size=(1, 1, 1))
-        else:
-            raise ValueError("`spatial_dims` must be 2 or 3.")
-        
+
     def _forward(self, x: torch.Tensor) -> Union[None, torch.Tensor, List[torch.Tensor]]:
         if self.preprocess is not None:
             x = self.preprocess(x)
@@ -25,7 +19,9 @@ class SegResNetDSwEmbedding(monai.networks.nets.SegResNetDS):
 
         x_down.reverse()
         x = x_down.pop(0)
-        embedding = self.average_pool(x).flatten(start_dim=1)
+
+        # Embedding (output features of the encoder) is returned together with the outputs
+        embedding = x.clone()
 
         if len(x_down) == 0:
             x_down = [torch.zeros(1, device=x.device, dtype=x.dtype)]
@@ -47,7 +43,5 @@ class SegResNetDSwEmbedding(monai.networks.nets.SegResNetDS):
         # in eval() mode, always return a single final output
         if not self.training:
             return outputs[0]
-        
+
         return embedding, outputs
-
-

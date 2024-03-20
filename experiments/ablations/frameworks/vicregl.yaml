@@ -1,11 +1,13 @@
-CONSTANTS#pretrain_method: VICRegL
-CONSTANTS#HIGH_RES_SIZE: [128, 256, 256]
-CONSTANTS#HIGH_RES_GRID_SIZE:  # Depends on the patch size and the model's receptive field
+CONSTANTS#FRAMEWORK: VICRegL
 
+# Given an architecture, its output feature size will be equal to input patch size divided by this factor.
+CONSTANTS#DOWNSAMPLE_FACTOR_BY_BACKBONE: {"SegResNetDS": 16, "ResNet50x2": 32}
+CONSTANTS#HIGH_RES_SIZE: [128, 256, 256]
+CONSTANTS#HIGH_RES_GRID_SIZE: "$[x // @CONSTANTS#DOWNSAMPLE_FACTOR_BY_BACKBONE[@CONSTANTS#BACKBONE_NAME] for x in @CONSTANTS#HIGH_RES_SIZE]"
 
 system#model:
     _target_: project.models.frameworks.vicregl.VICRegL
-    num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#backbone_name]'
+    num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#BACKBONE_NAME]'
 
 
 system#criterion:
@@ -17,21 +19,27 @@ system#datasets#train#transform:
     _target_: monai.transforms.Compose
     transforms:
         - _target_: monai.transforms.LoadImage
-          reader: ITKReader
           image_only: True
         - _target_: monai.transforms.EnsureChannelFirst
         - _target_: monai.transforms.Orientation
           axcodes: SPL
+          lazy: True
+        - _target_: monai.transforms.Spacing
+          pixdim: "%CONSTANTS#SPACING"
+          mode: bilinear
+          lazy: True
         - _target_: monai.transforms.CropForeground
+          lazy: True
+        - _target_: monai.transforms.SpatialPad
+          spatial_size: "%CONSTANTS#HIGH_RES_SIZE"
+          value: -1024
+          lazy: True
         - _target_: monai.transforms.ScaleIntensityRange
           a_min: -1024
           a_max: 3072
           b_min: 0
           b_max: 1
           clip: True
-        - _target_: monai.transforms.SpatialPad
-          spatial_size: "%CONSTANTS#HIGH_RES_SIZE"
-        - _target_: monai.transforms.ToTensor
         - _target_: project.transforms.ssl.MultiCrop
           high_resolution_transforms:
             - _target_: monai.transforms.Compose

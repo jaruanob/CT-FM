@@ -15,11 +15,11 @@ class ResNet(monai.networks.nets.ResNet):
         x = self.layer3(x)
         x = self.layer4(x)
 
-        # ---- Not used for vicregl ----
+        # ---- If needed avg pool should be done by the SSL framework ----
         # x = self.avgpool(x)
         # x = x.view(x.size(0), -1)
         # if self.fc is not None:
         #     x = self.fc(x)
-        # ------------------------------
+        # ----------------------------------------------------------------
 
         return x

@@ -50,9 +50,10 @@ class ConRecon(nn.Module):
         def tensor_forward(x):
             assert isinstance(x, torch.Tensor)
             embedding, outputs = self.backbone(x)
-            x = self.projection_head(embedding)
-            return x, outputs
-        
+            embedding = self.average_pool(embedding).flatten(start_dim=1)
+            embedding = self.projection_head(embedding)
+            return embedding, outputs
+
         def sequence_forward(x):
             assert isinstance(x, tuple) or isinstance(x, list)
             embeddings = []

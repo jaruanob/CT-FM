@@ -1,5 +1,4 @@
-CONSTANTS#pretrain_method: Reconstruction
-CONSTANTS#SPACING: [1.5, 1.5, 1.5] # Resample to voxel spacing in mm
+CONSTANTS#FRAMEWORK: Reconstruction
 CONSTANTS#PATCH_SIZE: [64, 128, 128] # Patch size in mm 
 CONSTANTS#ADAPTED_PATCH_SIZE: "$[math.ceil((@CONSTANTS#PATCH_SIZE[i]//@CONSTANTS#SPACING[i])/16) * 16 for i in range(3)]"
 _requires_: "$import math"
@@ -18,15 +17,21 @@ system#datasets#train#transform:
     _target_: monai.transforms.Compose
     transforms:
         - _target_: monai.transforms.LoadImage
-          reader: ITKReader
           image_only: True
         - _target_: monai.transforms.EnsureChannelFirst
         - _target_: monai.transforms.Orientation
           axcodes: SPL
+          lazy: True
         - _target_: monai.transforms.Spacing
           pixdim: "%CONSTANTS#SPACING"
-          mode: "bilinear"
+          mode: bilinear
+          lazy: True
         - _target_: monai.transforms.CropForeground
+          lazy: True
+        - _target_: monai.transforms.SpatialPad
+          spatial_size: "%CONSTANTS#ADAPTED_PATCH_SIZE"
+          value: -1024
+          lazy: True
         - _target_: monai.transforms.ScaleIntensityRange
           a_min: -1024
           a_max: 3072
@@ -38,6 +43,7 @@ system#datasets#train#transform:
         - _target_: monai.transforms.RandSpatialCropd
           keys: ["input", "target"]
           roi_size: "%CONSTANTS#ADAPTED_PATCH_SIZE"
+          lazy: True
         - _target_: monai.transforms.RandCoarseDropoutd
           keys: input
           holes: 2
@@ -46,9 +52,6 @@ system#datasets#train#transform:
           max_spatial_size: "$[int(dim*0.5) for dim in @CONSTANTS#ADAPTED_PATCH_SIZE]"
           prob: 1
           fill_value: 0
-        - _target_: monai.transforms.SpatialPadd
-          keys: ["input", "target"]
-          spatial_size: "%CONSTANTS#ADAPTED_PATCH_SIZE"
         - _target_: monai.transforms.ToTensord
           keys: ["input", "target"]
           track_meta: False
