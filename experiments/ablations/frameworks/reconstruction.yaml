@@ -5,6 +5,7 @@ _requires_: "$import math"
 
 system#model:
     _target_: project.models.frameworks.reconstruction.Reconstruction
+    backbone:
 
 
 system#criterion:
@@ -13,7 +14,7 @@ system#criterion:
         _target_: torch.nn.MSELoss # Masked autoencoders use MSE
 
 
-system#datasets#train#transform:
+system#datasets#train#dataset#transform:
     _target_: monai.transforms.Compose
     transforms:
         - _target_: monai.transforms.LoadImage

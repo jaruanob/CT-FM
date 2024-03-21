@@ -34,6 +34,8 @@ system:
     batch_size: 4
     pin_memory: True
     num_workers: 6
+
+    model:
   
     optimizer:
         _target_: torch.optim.AdamW
@@ -53,8 +55,10 @@ system:
   
     datasets:
         train:
-            _target_: monai.data.Dataset
-            data: "$pickle.load(open('/mnt/data16/ibro/IDC_SSL_CT/dataset_list.pkl', 'rb'))"
-            _requires_: "$import pickle"
-            transform:
+            _target_: project.data.safe_dataset.SafeDataset
+            dataset:
+                _target_: monai.data.Dataset
+                data: "$pickle.load(open('/mnt/data16/ibro/IDC_SSL_CT/dataset_list.pkl', 'rb'))"
+                _requires_: "$import pickle"
+                transform:
 

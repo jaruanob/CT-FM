@@ -2,7 +2,7 @@
 CONSTANTS#BACKBONE_NAME: ResNet50x2
 
 # This architecture is used by SimCLR and VicRegL.
-system#model#backbone: 
+system#model#backbone:
       _target_: project.models.backbones.resnet.ResNet
       block: "bottleneck"
       layers: [3, 4, 6, 3]

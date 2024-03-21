@@ -8,6 +8,7 @@ CONSTANTS#HIGH_RES_GRID_SIZE: "$[x // @CONSTANTS#DOWNSAMPLE_FACTOR_BY_BACKBONE[@
 system#model:
     _target_: project.models.frameworks.vicregl.VICRegL
     num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#BACKBONE_NAME]'
+    backbone:
 
 
 system#criterion:
@@ -16,7 +17,7 @@ system#criterion:
     gather_distributed: True
 
 
-system#datasets#train#transform:
+system#datasets#train#dataset#transform:
     _target_: monai.transforms.Compose
     transforms:
         - _target_: monai.transforms.LoadImage

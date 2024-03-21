@@ -7,6 +7,7 @@ CONSTANTS#NUM_CONTRASTIVE_CROPS: 8
 system#model: 
     _target_: project.models.frameworks.conrecon.ConRecon
     num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#BACKBONE_NAME]'
+    backbone:
 
 system#criterion:
     _target_: project.loss.conrecon_loss.ConReconLoss
@@ -18,7 +19,7 @@ system#criterion:
       loss:
           _target_: torch.nn.MSELoss # MAE uses MSE
 
-system#datasets#train#transform:
+system#datasets#train#dataset#transform:
     # Parent torchvision Compose so that the monai Compose children can have different map_items.
     # A parent monai Compose would force all children to have its map_items.
     _target_: torchvision.transforms.Compose
