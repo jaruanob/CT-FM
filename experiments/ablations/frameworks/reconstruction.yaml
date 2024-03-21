@@ -1,6 +1,6 @@
 CONSTANTS#FRAMEWORK: Reconstruction
-CONSTANTS#PATCH_SIZE: [64, 128, 128] # Patch size in mm 
-CONSTANTS#ADAPTED_PATCH_SIZE: "$[math.ceil((@CONSTANTS#PATCH_SIZE[i]//@CONSTANTS#SPACING[i])/16) * 16 for i in range(3)]"
+CONSTANTS#PATCH_SIZE_MM: [64, 128, 128] # Patch size in mm 
+CONSTANTS#PATCH_SIZE_VOXELS: "$[math.ceil((@CONSTANTS#PATCH_SIZE_MM[i]//@CONSTANTS#SPACING[i])/16) * 16 for i in range(3)]"
 _requires_: "$import math"
 
 system#model:
@@ -29,12 +29,12 @@ system#datasets#train#transform:
         - _target_: monai.transforms.CropForeground
           lazy: True
         - _target_: monai.transforms.SpatialPad
-          spatial_size: "%CONSTANTS#ADAPTED_PATCH_SIZE"
+          spatial_size: "%CONSTANTS#PATCH_SIZE_VOXELS"
           value: -1024
           lazy: True
         - _target_: monai.transforms.ScaleIntensityRange
           a_min: -1024
-          a_max: 3072
+          a_max: 2048
           b_min: 0
           b_max: 1
           clip: True
@@ -42,14 +42,13 @@ system#datasets#train#transform:
           func: '$lambda x: {"input": x, "target": x.clone()}'
         - _target_: monai.transforms.RandSpatialCropd
           keys: ["input", "target"]
-          roi_size: "%CONSTANTS#ADAPTED_PATCH_SIZE"
+          roi_size: "%CONSTANTS#PATCH_SIZE_VOXELS"
           lazy: True
         - _target_: monai.transforms.RandCoarseDropoutd
           keys: input
-          holes: 2
-          max_holes: 8
-          spatial_size: "$[int(dim*0.1) for dim in @CONSTANTS#ADAPTED_PATCH_SIZE]"
-          max_spatial_size: "$[int(dim*0.5) for dim in @CONSTANTS#ADAPTED_PATCH_SIZE]"
+          holes: 4
+          spatial_size: "$[int(dim*0.3) for dim in @CONSTANTS#PATCH_SIZE_VOXELS]"
+          max_spatial_size: "$[int(dim*0.5) for dim in @CONSTANTS#PATCH_SIZE_VOXELS]"
           prob: 1
           fill_value: 0
         - _target_: monai.transforms.ToTensord

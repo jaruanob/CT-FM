@@ -1,4 +1,4 @@
-import lightly
+import lightly.loss.swav_loss
 
 
 class SwaVLoss(lightly.loss.swav_loss.SwaVLoss):

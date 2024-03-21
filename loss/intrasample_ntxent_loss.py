@@ -1,7 +1,4 @@
-from typing import List
-
 import torch
-from torch import distributed as torch_dist
 from torch import nn
 
 
@@ -31,12 +28,12 @@ class IntraSampleNTXEntLoss(nn.Module):
 
         Args:
             input (list of list of Tensors): The input data in the following format:
-                List [crops], List [views], Tensor [BC(D)HW].
+                List [crops], List [views], Tensor [B, out_dim].
                 Each batch index represents a different image.
         Returns:
             float: Contrastive Cross Entropy Loss value.
         """
-        # Dimensions: List [crops], List [views], Tensor [BC(D)HW].
+        # Dimensions: List [crops], List [views], Tensor [B, out_dim].
         batch_size = input[-1][-1].shape[0]
         num_crops = len(input)
 

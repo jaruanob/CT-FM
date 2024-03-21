@@ -7,7 +7,7 @@ project: .
 trainer:
     _target_: pytorch_lightning.Trainer
     benchmark: True
-    # Ablations - 80 epochs, 500 batches per epoch, 4 batch size, 4 GPUs 
+    # Ablations - 80 epochs, 500 batches per epoch, 4 batch size, 4 GPUs / ~138,000 dataset size ≈ 4.6 epochs
     max_epochs: 80
     limit_train_batches: 500
     accelerator: gpu
@@ -27,15 +27,13 @@ trainer:
           dirpath: $f"/mnt/data16/ibro/IDC_SSL_CT/runs/checkpoints/CT_FM_{@CONSTANTS#FRAMEWORK}_{@CONSTANTS#BACKBONE_NAME}"
           save_last: True
           verbose: True
-          every_n_epochs: 1 # 10
-          save_weights_only: False  # True
+          every_n_epochs: 1
 
 system:
     _target_: lighter.LighterSystem
     batch_size: 4
     pin_memory: True
-    drop_last_batch: True # Used in SSL cases because of negatives
-    num_workers: 8
+    num_workers: 6
   
     optimizer:
         _target_: torch.optim.AdamW

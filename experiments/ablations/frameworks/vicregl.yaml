@@ -12,6 +12,7 @@ system#model:
 
 system#criterion:
     _target_: project.loss.vicregl.VICRegLLoss
+    alpha: 0.75
     gather_distributed: True
 
 
@@ -36,7 +37,7 @@ system#datasets#train#transform:
           lazy: True
         - _target_: monai.transforms.ScaleIntensityRange
           a_min: -1024
-          a_max: 3072
+          a_max: 2048
           b_min: 0
           b_max: 1
           clip: True
@@ -44,7 +45,7 @@ system#datasets#train#transform:
           high_resolution_transforms:
             - _target_: monai.transforms.Compose
               transforms:
-                # This transform produces a dict, we start using MONAI's dict transforms after it.
+                # This transform produces a dict, we start using the dict transforms after it.
                 - _target_: project.transforms.vicregl.RandomResizedCropAndFlip3D
                   roi_size: "%CONSTANTS#HIGH_RES_SIZE"
                   grid_size: "%CONSTANTS#HIGH_RES_GRID_SIZE"
