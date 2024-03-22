@@ -7,7 +7,7 @@ project: .
 trainer:
     _target_: pytorch_lightning.Trainer
     benchmark: True
-    # Ablations - 80 epochs, 500 batches per epoch, 4 batch size, 4 GPUs / ~138,000 dataset size ≈ 4.6 epochs
+    # Ablations - 80 epochs, 500 batches per epoch, 4 batch size, 4 GPUs / 148,134 dataset size ≈ 4.3 epochs
     max_epochs: 80
     limit_train_batches: 500
     accelerator: gpu

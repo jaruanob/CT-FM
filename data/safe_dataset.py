@@ -38,6 +38,6 @@ class SafeDataset(Dataset):
             return self.dataset[index]
         try:
             return self.dataset[index]
-        except e:
+        except Exception as e:
             logger.error(f"Error at index {index}, skipping it. \nException: {e}\n{traceback.format_exc()}")
             return None
