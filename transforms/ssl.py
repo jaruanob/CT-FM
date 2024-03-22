@@ -1,18 +1,21 @@
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
 from copy import deepcopy
-from typing import Any, Callable, Optional, Tuple, List, Dict
 
 import torch
-from monai.transforms import RandScaleCrop, Resize, Transform
+from monai.transforms import RandScaleCrop, Resize, Transform, MapTransform
 
 from lighter.utils.misc import ensure_list
+
 
 class Duplicate:
     """Duplicate an input and apply two different transforms. Used for SimCLR primarily.
     """
 
     def __init__(self,
-                 transforms1: Optional[Callable] = None,
-                 transforms2: Optional[Callable] = None):
+            transforms1: Optional[Callable] = None,
+            transforms2: Optional[Callable] = None
+        ):
         """Duplicates an input and applies the given transformations to each copy separately.
         Args:
             transforms1 (Optional[Callable], optional): _description_. Defaults to None.
@@ -50,10 +53,10 @@ class MultiCrop:
     def __call__(self, input):
         high_resolution_crops = [transform(input) for transform in self.high_resolution_transforms]
         low_resolution_crops = [transform(input) for transform in self.low_resolution_transforms]
-        return high_resolution_crops, low_resolution_crops
+        return {"high_resolution_crops": high_resolution_crops, "low_resolution_crops": low_resolution_crops}
 
 
-class RandomResizedCrop3D(Transform):
+class RandomResizedCrop(Transform):
     """
     Combines monai's random spatial crop followed by resize to the desired size.
 
@@ -85,8 +88,30 @@ class RandomResizedCrop3D(Transform):
             random_scale = torch.empty(1).uniform_(*self.scale).item()
             rand_cropper = RandScaleCrop(random_scale, random_size=False)
             resizer = Resize(self.size, mode="trilinear")
-
-            for transform in [rand_cropper, resizer]:
-                image = transform(image)
-
+            image = rand_cropper(image)
+            image = resizer(image)
         return image
+
+class DictifyTransform(MapTransform):
+    """
+    Dict version of RandomResizedCrop.
+    """
+
+    def __init__(
+        self,
+        transform: Callable,
+        keys: List[str],
+        allow_missing_keys: bool = False
+    ):
+        super().__init__(keys=keys, allow_missing_keys=allow_missing_keys)
+        self.transform = transform
+
+    def __call__(self, data: Dict) -> Dict:
+        for key in self.keys:
+            if key in data:
+                data[key] = self.transform(data[key])
+            else:
+                if not self.allow_missing_keys:
+                    raise ValueError(f"Key {key} not found in the input dictionary.")
+        return data
+

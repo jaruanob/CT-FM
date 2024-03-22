@@ -1,0 +1,64 @@
+CONSTANTS:
+    NUM_FTRS_BY_BACKBONE: {"SegResNetDS": 512, "ResNet50x2": 4096}
+    SPACING: [3, 1, 1]
+
+project: .
+
+trainer:
+    _target_: pytorch_lightning.Trainer
+    benchmark: True
+    # Ablations - 80 epochs, 500 batches per epoch, 4 batch size, 4 GPUs / ~138,000 dataset size ≈ 4.6 epochs
+    max_epochs: 80
+    limit_train_batches: 500
+    accelerator: gpu
+    devices: 4
+    strategy: ddp
+    sync_batchnorm: True
+    precision: 16-mixed
+    log_every_n_steps: 100
+    logger: 
+        _target_: pytorch_lightning.loggers.WandbLogger
+        name: $f"CT_FM_{@CONSTANTS#FRAMEWORK}_{@CONSTANTS#BACKBONE_NAME}"
+        project: CT_FM
+        save_dir: $f"/mnt/data16/ibro/IDC_SSL_CT/runs/logs/CT_FM_{@CONSTANTS#FRAMEWORK}_{@CONSTANTS#BACKBONE_NAME}"
+  
+    callbacks:
+        - _target_: pytorch_lightning.callbacks.ModelCheckpoint
+          dirpath: $f"/mnt/data16/ibro/IDC_SSL_CT/runs/checkpoints/CT_FM_{@CONSTANTS#FRAMEWORK}_{@CONSTANTS#BACKBONE_NAME}"
+          save_last: True
+          verbose: True
+          every_n_epochs: 1
+
+system:
+    _target_: lighter.LighterSystem
+    batch_size: 4
+    pin_memory: True
+    num_workers: 6
+
+    model:
+  
+    optimizer:
+        _target_: torch.optim.AdamW
+        params: "$@system#model.parameters()"
+        # Learning rate calculated as per: `lr = (effective_batch_size) / 256 * base_lr`
+        lr: "$((@system#batch_size * @trainer#devices)/256) * 0.0007"
+        weight_decay: 0.000001
+  
+    scheduler:
+        _target_: monai.optimizers.WarmupCosineSchedule
+        optimizer: "@system#optimizer"
+        # Ablations - 5 epochs warmup
+        warmup_steps: 10  # First 10 epochs
+        t_total: $@trainer#max_epochs
+        # Ablations - don't let the learning rate go low
+        end_lr: "$@system#optimizer#lr / 10"
+  
+    datasets:
+        train:
+            _target_: project.data.safe_dataset.SafeDataset
+            dataset:
+                _target_: monai.data.Dataset
+                data: "$pickle.load(open('/mnt/data16/ibro/IDC_SSL_CT/dataset_list.pkl', 'rb'))"
+                _requires_: "$import pickle"
+                transform:
+

@@ -1,1 +1,0 @@
-convert = lambda data: {key: [[dic.get(key) for dic in row] for row in data] for key in set(key for row in data for dic in row for key in dic)}

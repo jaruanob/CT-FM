@@ -5,10 +5,11 @@ from torch.utils.data import Dataset
 from loguru import logger
 
 
-class SafeDatasetWrapper(Dataset):
+class SafeDataset(Dataset):
     """
-    A wrapper around a PyTorch Dataset that patches the __getitem__ method to catch exceptions
-    and return None if an exception occurs.
+    A wrapper around a Dataset that patches the __getitem__ method to catch exceptions
+    and return None if an exception occurs, assuming that it happened because the file 
+    is corrupted or missing and not because of a bug in the code.
 
     Attributes:
         dataset (Dataset): The original PyTorch Dataset to be wrapped.
@@ -37,6 +38,6 @@ class SafeDatasetWrapper(Dataset):
             return self.dataset[index]
         try:
             return self.dataset[index]
-        except Exception as e:
+        except e:
             logger.error(f"Error at index {index}, skipping it. \nException: {e}\n{traceback.format_exc()}")
             return None

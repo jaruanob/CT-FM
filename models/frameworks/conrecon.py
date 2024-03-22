@@ -4,20 +4,20 @@ from lightly.models.modules import SimCLRProjectionHead
 from monai.data import decollate_batch
 
 
-class ConReCon(nn.Module):
+class ConRecon(nn.Module):
     """
-    This class implements the ConReCon model, a variant of the SimCLR model + reconstruction.
+    This class implements the ConRecon model, a variant of the SimCLR model + reconstruction.
 
     Attributes:
-        backbone (nn.Module): The backbone network used in the ConReCon model.
+        backbone (nn.Module): The backbone network used in the ConRecon model.
         num_ftrs (int): The number of output features from the backbone network. Default is 32.
         out_dim (int): The dimension of the output representations. Default is 128.
-        projection_head (SimCLRProjectionHead): The projection head used in the ConReCon model.
+        projection_head (SimCLRProjectionHead): The projection head used in the ConRecon model.
     """
 
     def __init__(self, backbone: nn.Module, num_ftrs: int = 32, out_dim: int = 128, spatial_dims: int = 3):
         """
-        Constructs the ConReCon model with a given backbone network, number of features, and output dimension.
+        Constructs the ConRecon model with a given backbone network, number of features, and output dimension.
 
         Args:
             backbone (nn.Module): The backbone network.
@@ -50,9 +50,10 @@ class ConReCon(nn.Module):
         def tensor_forward(x):
             assert isinstance(x, torch.Tensor)
             embedding, outputs = self.backbone(x)
-            x = self.projection_head(embedding)
-            return x, outputs
-        
+            embedding = self.average_pool(embedding).flatten(start_dim=1)
+            embedding = self.projection_head(embedding)
+            return embedding, outputs
+
         def sequence_forward(x):
             assert isinstance(x, tuple) or isinstance(x, list)
             embeddings = []
@@ -80,11 +81,13 @@ class ConReCon(nn.Module):
 
 
 if __name__ == "__main__":
+    import sys
+    sys.path.append("../backbones")
     from segresnetds_w_embedding import SegResNetDSwEmbedding
-    # Create a ConReCon model
+    # Create a ConRecon model
 
     backbone = SegResNetDSwEmbedding()
-    model = ConReCon(backbone=backbone, num_ftrs=256, out_dim=128, spatial_dims=3)
+    model = ConRecon(backbone=backbone, num_ftrs=256, out_dim=128, spatial_dims=3)
     x = torch.rand(1, 1, 32, 32, 32)
     batch = (x, x)
     larger_batch = (batch, batch, batch, batch)

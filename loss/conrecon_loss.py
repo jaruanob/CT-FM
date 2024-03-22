@@ -1,10 +1,7 @@
-from typing import List
-import torch
 from torch import nn
-from torch import distributed as torch_dist
 
 
-class ReConLossNestedWrapper(nn.Module):
+class ReconLossNestedWrapper(nn.Module):
     def __init__(self, loss: nn.Module):
         super().__init__()
         self.loss = loss
@@ -20,9 +17,9 @@ class ReConLossNestedWrapper(nn.Module):
         return loss
         
 
-class ConReConLoss(nn.Module):
+class ConReconLoss(nn.Module):
     """
-    This class implements the ConReConLoss, a loss function used for contrastive learning + reconstruction
+    This class implements the ConReconLoss, a loss function used for contrastive learning + reconstruction
     """
 
     def __init__(self, contrastive_loss: nn.Module, reconstruction_loss: nn.Module, contrastive_weight: float = 0.5):
@@ -33,12 +30,12 @@ class ConReConLoss(nn.Module):
         """
         super().__init__()
         self.contrastive_loss = contrastive_loss
-        self.reconstruction_loss = ReConLossNestedWrapper(reconstruction_loss)
+        self.reconstruction_loss = ReconLossNestedWrapper(reconstruction_loss)
         self.contrastive_weight = contrastive_weight        
 
     def forward(self, input, target):
         """
-        The forward pass of the ConReConLoss.
+        The forward pass of the ConReconLoss.
         """
         assert "con" in input and "recon" in input, "input must contain both contrastive and reconstruction data"
         contrastive_loss = self.contrastive_loss(input["con"])

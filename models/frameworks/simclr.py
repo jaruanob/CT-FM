@@ -51,7 +51,7 @@ class SimCLR(nn.Module):
             x = self.average_pool(x).flatten(start_dim=1)
             x = self.projection_head(x)
             return x
-        
+
         def sequence_forward(x):
             assert isinstance(x, tuple) or isinstance(x, list)
             out = []
@@ -64,6 +64,6 @@ class SimCLR(nn.Module):
 
         if isinstance(input, torch.Tensor):
             return tensor_forward(input)
-        
+
         if isinstance(input, tuple) or isinstance(input, list):
             return sequence_forward(input)
