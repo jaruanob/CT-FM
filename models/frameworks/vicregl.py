@@ -4,27 +4,28 @@ from lightly.models.modules.heads import BarlowTwinsProjectionHead, VicRegLLocal
 
 
 class VICRegL(nn.Module):
-    def __init__(self, backbone, spatial_dims, num_ftrs, global_projection_ftrs=(2048, 2048), local_projection_ftrs=(128, 128)):
+    def __init__(self, backbone, num_ftrs, global_projection_ftrs=(2048, 2048), local_projection_ftrs=(128, 128), spatial_dims=3):
         super().__init__()
         self.backbone = backbone
-        self.spatial_dims = spatial_dims
         self.global_projection_head = BarlowTwinsProjectionHead(num_ftrs, *global_projection_ftrs)
         self.local_projection_head = VicRegLLocalProjectionHead(num_ftrs, *local_projection_ftrs)
-        if self.spatial_dims == 2:
+        if spatial_dims == 2:
             self.average_pool = nn.AdaptiveAvgPool2d(output_size=(1, 1))
-        elif self.spatial_dims == 3:
+        elif spatial_dims == 3:
             self.average_pool = nn.AdaptiveAvgPool3d(output_size=(1, 1, 1))
         else:
             raise ValueError("`spatial_dims` must be 2 or 3.")
 
+
     def forward(self, input):
-        high_resolution, low_resolution = input
+        high_resolution_crops = input["high_resolution_crops"]
+        low_resolution_crops = input["low_resolution_crops"]
 
-        global_views_features = [self.subforward(data["image"]) for data in high_resolution]
-        global_grids = [data["grid"] for data in high_resolution]
+        global_views_features = [self.subforward(data["image"]) for data in high_resolution_crops]
+        global_grids = [data["grid"] for data in high_resolution_crops]
 
-        local_views_features = [self.subforward(data["image"]) for data in low_resolution]
-        local_grids = [data["grid"] for data in low_resolution]
+        local_views_features = [self.subforward(data["image"]) for data in low_resolution_crops]
+        local_grids = [data["grid"] for data in low_resolution_crops]
 
         return global_views_features, global_grids, local_views_features, local_grids
 
