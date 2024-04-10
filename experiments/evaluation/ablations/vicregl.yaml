@@ -1,3 +1,3 @@
-CONSTANTS#name: vicregl_seg_eval
-system#model#model#ckpt_path: /mnt/data1/CT_FM/IDC_SSL_CT/runs/checkpoints/CT_FM_VICRegL_SegResNetDS/epoch=79-step=40000.ckpt
+CONSTANTS#name: vicregl_eval
+system#model#model#ckpt_path: /mnt/data1/CT_FM/IDC_SSL_CT/runs/checkpoints/CT_FM_VICRegL_alpha_075_SegResNetDS/epoch=79-step=40000.ckpt
 system#model#model#ckpt_to_model_prefix: {"backbone." : "encoder"} 

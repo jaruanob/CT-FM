@@ -10,7 +10,7 @@ CONSTANTS:
     percentage: 5 # Approx. 50 samples
     intensity_range: [-1024, 3072]
     # Wandb project 
-    project: "ct_fm_quick_eval"
+    project: "ct_fm_quick_seg_eval"
     # System specific variables
     dataset_dir: "/mnt/data1/SOTASeg/Dataset600_TotalSegmentator_all_fullres"
     cache_dir: "/mnt/data1/SOTASeg/cache"

@@ -1,0 +1,2 @@
+lighter fit --config_file=./experiments/evaluation/seg_base.yaml,./experiments/evaluation/ablations/suprem_segresnet.yaml
+lighter fit --config_file=./experiments/evaluation/seg_base.yaml,./experiments/evaluation/ablations/suprem_unet.yaml
