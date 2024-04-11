@@ -1,4 +1,5 @@
 CONSTANTS#name: suprem_unet_eval
+CONSTANTS#axcodes: "RAS"
 system#model#model:
       _target_: project.models.suprem.SuPreM_loader
       model:
