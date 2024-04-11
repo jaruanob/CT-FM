@@ -10,6 +10,7 @@ system#model:
         blocks_down: [1, 2, 2, 4]
         blocks_up: [1, 1, 1]
       ckpt_path: "/mnt/data1/CT_FM/baselines/SuPreM_SegResNet/supervised_suprem_segresnet_2100.pth"
+      decoder: False
 
 
 trainer#callbacks:

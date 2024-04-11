@@ -34,10 +34,6 @@ trainer:
         name: '$f"{@CONSTANTS#name}_{@CONSTANTS#percentage}%"'
         save_dir: '$f"/mnt/data1/CT_FM/{@CONSTANTS#project}/logs/{@CONSTANTS#name}_{@CONSTANTS#percentage}"'
 
-    callbacks:
-        - _target_: lighter.callbacks.LighterFreezer
-          # _orig_mod is torch.compile added notation
-          name_starts_with: "_orig_mod.encoder"
 
 system:
     _target_: lighter.LighterSystem
