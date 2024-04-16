@@ -1,3 +1,2 @@
 CONSTANTS#name: simclr_eval
-system#model#model#ckpt_path: /mnt/data1/CT_FM/IDC_SSL_CT/runs/checkpoints/CT_FM_SimCLR_SegResNetDS/epoch=79-step=40000.ckpt
-system#model#model#ckpt_to_model_prefix: {"backbone." : "encoder"} 
+system#model#model#trunk#ckpt_path: /mnt/data1/CT_FM/IDC_SSL_CT/runs/checkpoints/CT_FM_SimCLR_SegResNetDS/epoch=79-step=40000.ckpt

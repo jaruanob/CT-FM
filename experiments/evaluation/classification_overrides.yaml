@@ -1,1 +1,0 @@
-system#model#model#ckpt_to_model_prefix: '${"backbone.encoder" : ""} if "recon" in @CONSTANTS#name else {"backbone.": ""}'

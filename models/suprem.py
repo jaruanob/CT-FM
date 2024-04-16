@@ -1,6 +1,6 @@
 import torch
 
-def SuPreM_loader(model, ckpt_path, decoder=True):
+def SuPreM_loader(model, ckpt_path, decoder=True, encoder_only=False):
     model_dict = torch.load(ckpt_path)['net']
     store_dict = model.state_dict()
     amount = 0
@@ -25,10 +25,32 @@ def SuPreM_loader(model, ckpt_path, decoder=True):
                     continue
                 store_dict[new_key] = model_dict[key]   
                 amount += 1
-
     else:
         raise ValueError('Model not supported')
     
     model.load_state_dict(store_dict)
+
+    if encoder_only:
+        class Encoder(torch.nn.Module):
+            def __init__(self, model):
+                super(Encoder, self).__init__()
+                self.model = model
+
+            def forward(self, x):
+                if self.model.__class__.__name__ == "SegResNet":
+                    self.out = self.model.encode(x)[0]
+                    return self.out
+                
+                elif self.model.__class__.__name__ == "UNet3D":
+                    self.out64, self.skip_out64 = self.model.down_tr64(x)
+                    self.out128,self.skip_out128 = self.model.down_tr128(self.out64)
+                    self.out256,self.skip_out256 = self.model.down_tr256(self.out128)
+                    self.out512 = self.model.down_tr512(self.out256)[0]
+                    return self.out512
+                else:
+                    raise ValueError('Model not supported')
+        
+        model = Encoder(model)
+
     print(f"Loaded {amount}/{len(store_dict.keys())} keys")
     return model

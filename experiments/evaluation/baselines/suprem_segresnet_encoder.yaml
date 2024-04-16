@@ -1,0 +1,21 @@
+CONSTANTS#name: suprem_segresnet_eval
+CONSTANTS#embedding_dim: 128
+system#model#model#trunk:
+      _target_: project.models.suprem.SuPreM_loader
+      model:
+        _target_: monai.networks.nets.SegResNet
+        in_channels: "%CONSTANTS#in_channels"
+        out_channels: "%CONSTANTS#num_classes"
+        init_filters: 16
+        dropout_prob: 0.0
+        blocks_down: [1, 2, 2, 4]
+        blocks_up: [1, 1, 1]
+      ckpt_path: "/mnt/data1/CT_FM/baselines/SuPreM_SegResNet/supervised_suprem_segresnet_2100.pth"
+      decoder: False
+      encoder_only: True
+
+system#model#model#pre_func: null
+
+# Modify for lighter format and convert LPS data format to RAS. 
+system#datasets#train#func: "$lambda dataset: [{'input': np.flip(item[0].astype(np.float32), axis=[2, 1]).copy(), 'target': item[1][0]} for item in dataset]"
+system#datasets#val#func: "$lambda dataset: [{'input': np.flip(item[0].astype(np.float32), axis=[2, 1]).copy(), 'target': item[1][0]} for item in dataset]"

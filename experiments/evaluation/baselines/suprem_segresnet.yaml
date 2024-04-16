@@ -1,4 +1,5 @@
 CONSTANTS#name: suprem_segresnet_eval
+CONSTANTS#axcodes: "RAS"
 system#model:
       _target_: project.models.suprem.SuPreM_loader
       model:
@@ -11,7 +12,6 @@ system#model:
         blocks_up: [1, 1, 1]
       ckpt_path: "/mnt/data1/CT_FM/baselines/SuPreM_SegResNet/supervised_suprem_segresnet_2100.pth"
       decoder: False
-
 
 trainer#callbacks:
         - _target_: lighter.callbacks.LighterFreezer
