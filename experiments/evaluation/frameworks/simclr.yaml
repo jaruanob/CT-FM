@@ -1,0 +1,2 @@
+CONSTANTS#name: simclr_eval
+system#model#model#trunk#ckpt_path: /mnt/data1/CT_FM/IDC_SSL_CT/runs/checkpoints/CT_FM_SimCLR_SegResNetDS/epoch=79-step=40000.ckpt
