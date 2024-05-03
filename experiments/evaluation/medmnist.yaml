@@ -4,9 +4,9 @@ CONSTANTS:
     project: "ct_fm_quick_class_eval"
     in_channels: 1
     embedding_dim: 512
-
+    format: "$'suprem' if 'suprem' in @CONSTANTS#name else 'lighter'"
     # Transforms the MedMNIST format to either lighter format (SPL, default) or SuPREM format (RAS)
-    dataset_specific_transform: "$lambda dataset: [{'input': item[0].astype(np.float32).transpose(0, 3, 2, 1) if 'suprem' not in @CONSTANTS#name else np.flip(item[0].astype(np.float32), axis=[2, 1]).copy(), 'target': item[1][0]} for item in dataset]"
+    dataset_specific_transform: "$lambda dataset: [{'input': item[0].astype(np.float32).transpose(0, 3, 2, 1) if @CONSTANTS#format == 'lighter' else np.flip(item[0].astype(np.float32), axis=[2, 1]).copy(), 'target': item[1][0]} for item in dataset]"
 
 trainer:
     _target_: pytorch_lightning.Trainer
