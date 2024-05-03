@@ -1,5 +1,5 @@
 CONSTANTS#name: random_init_eval
-system#model#model:
+system#model#model#trunk:
     _target_: monai.networks.nets.SegResNetDS
     spatial_dims: 3
     in_channels: "%CONSTANTS#in_channels"

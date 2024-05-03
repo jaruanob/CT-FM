@@ -5,20 +5,22 @@ CONSTANTS:
     val_max_patch_size: [100, 384, 384] # This is for the val dataset due to the large size of the images
     axcodes: SPL
     in_channels: 1
-    out_channels: 3
-    spacing: [1.5, 1.5, 1.5]
+    out_channels: 105
     # Percentage of the dataset to use
-    val_size: 50 # 30 samples
-    intensity_range: [-250, 250] # SuPreM based threshold
+    percentage: 5 # Approx. 50 samples
+    intensity_range: [-1024, 3072]
     # Wandb project 
-    project: "ct_fm_lits_eval"
-    dataset_dir: "/mnt/ssd1/suraj/LITS/LITS17"
+    project: "ct_fm_quick_seg_eval"
+    # System specific variables
+    dataset_dir: "/mnt/data1/SOTASeg/Dataset600_TotalSegmentator_all_fullres"
+    cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@CONSTANTS#format}"'
+    format: "$'suprem' if 'suprem' in @CONSTANTS#name else 'lighter'"
 
 trainer:
     _target_: pytorch_lightning.Trainer
     benchmark: True
-    max_epochs: 100
-    check_val_every_n_epoch: 1
+    max_epochs: 200
+    check_val_every_n_epoch: 5
     accelerator: gpu
     # ---------
     devices: 4
@@ -30,8 +32,8 @@ trainer:
     logger:
         _target_: pytorch_lightning.loggers.WandbLogger
         project: "@CONSTANTS#project"
-        name: '$f"{@CONSTANTS#name}"'
-        save_dir: '$f"/mnt/data1/CT_FM/{@CONSTANTS#project}/logs/{@CONSTANTS#name}"'
+        name: '$f"{@CONSTANTS#name}_{@CONSTANTS#percentage}%"'
+        save_dir: '$f"/mnt/data1/CT_FM/{@CONSTANTS#project}/logs/{@CONSTANTS#name}_{@CONSTANTS#percentage}"'
 
     callbacks:
         - _target_: lighter.callbacks.LighterFreezer
@@ -99,16 +101,19 @@ system:
 
     datasets:
         train:
-            _target_: monai.data.CacheDataset
+            _target_: monai.data.PersistentDataset
+            cache_dir: '$f"{@CONSTANTS#cache_dir}/train"'
+            hash_transform: "$monai.data.utils.json_hashing"
             data:
-                _target_: project.data.ts_data.lits_get_image_label_paths
+                _target_: project.data.get_image_label_paths
                 data_dir: "%CONSTANTS#dataset_dir"
                 split: train
+                percentage: "%CONSTANTS#percentage"
             transform:
                 _target_: monai.transforms.Compose
                 transforms: 
                     - _target_: monai.transforms.LoadImaged
-                      reader: "NibabelReader"
+                      reader: "ITKReader"
                       keys: ["image", "label"]
                       ensure_channel_first: True
                     - _target_: monai.transforms.EnsureTyped
@@ -116,9 +121,6 @@ system:
                     - _target_: monai.transforms.Orientationd
                       keys: ["image", "label"]
                       axcodes: "%CONSTANTS#axcodes"
-                    # - _target_: monai.transforms.Spacingd
-                    #   keys: ["image", "label"]
-                    #   pixdim: "%CONSTANTS#spacing"
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@CONSTANTS#intensity_range[0]"
@@ -165,30 +167,28 @@ system:
                       std: 0.1
                       prob: 0.2
                     - _target_: monai.transforms.Lambda
-                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor()}'
+                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor().long()}'
                       track_meta: False
     
         val:
             _target_: monai.data.CacheDataset
             data:
-                _target_: project.data.ts_data.lits_get_image_label_paths
+                _target_: project.data.get_image_label_paths
                 data_dir: "%CONSTANTS#dataset_dir"
                 split: val
+                percentage: 100 # 25 samples
             transform:
                 _target_: monai.transforms.Compose
                 transforms:
                     - _target_: monai.transforms.LoadImaged
-                      reader: "NibabelReader"
                       keys: ["image", "label"]
+                      reader: "ITKReader"
                       ensure_channel_first: True
                     - _target_: monai.transforms.EnsureTyped
                       keys: ["image", "label"]
                     - _target_: monai.transforms.Orientationd
                       keys: ["image", "label"]
                       axcodes: "%CONSTANTS#axcodes"
-                    # - _target_: monai.transforms.Spacingd
-                    #   keys: ["image", "label"]
-                    #   pixdim: "%CONSTANTS#spacing"                      
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@CONSTANTS#intensity_range[0]"
@@ -205,7 +205,7 @@ system:
                       roi_size: "%CONSTANTS#val_max_patch_size"
                       random_size: False
                     - _target_: monai.transforms.Lambda
-                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor()}'
+                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor().long()}'
                       track_meta: False
 
     postprocessing:

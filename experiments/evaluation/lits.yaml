@@ -2,28 +2,26 @@ project: .
 CONSTANTS:
     init_LR: 0.0002
     patch_size: [96, 160, 160]
-    val_max_patch_size: [100, 384, 384] # This is for the val dataset due to the large size of the images
     axcodes: SPL
     in_channels: 1
-    out_channels: 105
+    out_channels: 3
+    spacing: [3, 1, 1]
     # Percentage of the dataset to use
-    percentage: 5 # Approx. 50 samples
-    intensity_range: [-1024, 3072]
+    intensity_range: [-250, 250] # SuPreM based threshold
     # Wandb project 
-    project: "ct_fm_quick_seg_eval"
-    # System specific variables
-    dataset_dir: "/mnt/data1/SOTASeg/Dataset600_TotalSegmentator_all_fullres"
-    cache_dir: "/mnt/data1/SOTASeg/cache"
-
+    project: "ct_fm_lits_eval"
+    dataset_dir: "/mnt/ssd1/suraj/LITS/LITS17"
+    cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{uuid.uuid4()}"'
+    _requires_: "$import uuid"
 trainer:
     _target_: pytorch_lightning.Trainer
     benchmark: True
-    max_epochs: 200
+    max_epochs: 100
     check_val_every_n_epoch: 1
     accelerator: gpu
     # ---------
     devices: 4
-    strategy: ddp_find_unused_parameters_true
+    strategy: ddp_find_unused_parameters_false
     sync_batchnorm: True
     # ---------
     precision: 16-mixed
@@ -31,16 +29,12 @@ trainer:
     logger:
         _target_: pytorch_lightning.loggers.WandbLogger
         project: "@CONSTANTS#project"
-        name: '$f"{@CONSTANTS#name}_{@CONSTANTS#percentage}%"'
-        save_dir: '$f"/mnt/data1/CT_FM/{@CONSTANTS#project}/logs/{@CONSTANTS#name}_{@CONSTANTS#percentage}"'
+        name: '$f"{@CONSTANTS#name}"'
+        save_dir: '$f"/mnt/data1/CT_FM/{@CONSTANTS#project}/logs/{@CONSTANTS#name}"'
 
-    callbacks:
-        - _target_: lighter.callbacks.LighterFreezer
-          # _orig_mod is torch.compile added notation
-          name_starts_with: ["_orig_mod.trunk.encoder"]
 system:
     _target_: lighter.LighterSystem
-    batch_size: 2
+    batch_size: 6
     pin_memory: True
     num_workers: 8
     model:
@@ -100,14 +94,16 @@ system:
 
     datasets:
         train:
-            _target_: monai.data.Dataset
+            _target_: monai.data.PersistentDataset
+            hash_transform: "$monai.data.utils.json_hashing"
+            cache_dir: 'f$"{%CONSTANTS#cache_dir}/train"'
             data:
-                _target_: project.data.ts_data.get_image_label_paths
+                _target_: project.data.lits_get_image_label_paths
                 data_dir: "%CONSTANTS#dataset_dir"
                 split: train
-                percentage: "%CONSTANTS#percentage"
             transform:
                 _target_: monai.transforms.Compose
+                map_items: False
                 transforms: 
                     - _target_: monai.transforms.LoadImaged
                       reader: "ITKReader"
@@ -118,6 +114,10 @@ system:
                     - _target_: monai.transforms.Orientationd
                       keys: ["image", "label"]
                       axcodes: "%CONSTANTS#axcodes"
+                    - _target_: monai.transforms.Spacingd
+                      keys: ["image", "label"]
+                      pixdim: "%CONSTANTS#spacing"
+                      mode: ["bilinear", "nearest"]
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@CONSTANTS#intensity_range[0]"
@@ -133,10 +133,18 @@ system:
                       keys: ["image", "label"]
                       spatial_size: "%CONSTANTS#patch_size"
                       mode: constant
-                    - _target_: monai.transforms.RandSpatialCropd # Change this to something with negative sampling
+                    - _target_: monai.transforms.RandCropByPosNegLabeld # Change this to something with negative sampling
                       keys: ["image", "label"]
-                      roi_size: "%CONSTANTS#patch_size"
-                      random_size: False                      
+                      label_key: "label"
+                      image_key: "image"
+                      pos: 2
+                      neg: 1
+                      num_samples: 1
+                      image_threshold: 0
+                      spatial_size: "%CONSTANTS#patch_size"
+                    - _target_: monai.transforms.Lambda
+                      func: '$lambda x: x[0]' # Index sample
+                      track_meta: False                      
                     - _target_: monai.transforms.RandAffined
                       keys: ["image", "label"]
                       prob: 0.2
@@ -168,24 +176,29 @@ system:
                       track_meta: False
     
         val:
-            _target_: monai.data.Dataset
+            _target_: monai.data.PersistentDataset
+            hash_transform: "$monai.data.utils.json_hashing"
+            cache_dir: 'f$"{%CONSTANTS#cache_dir}/val"'
             data:
-                _target_: project.data.ts_data.get_image_label_paths
+                _target_: project.data.lits_get_image_label_paths
                 data_dir: "%CONSTANTS#dataset_dir"
                 split: val
-                percentage: 18 # 10 samples
             transform:
                 _target_: monai.transforms.Compose
                 transforms:
                     - _target_: monai.transforms.LoadImaged
-                      keys: ["image", "label"]
                       reader: "ITKReader"
+                      keys: ["image", "label"]
                       ensure_channel_first: True
                     - _target_: monai.transforms.EnsureTyped
                       keys: ["image", "label"]
                     - _target_: monai.transforms.Orientationd
                       keys: ["image", "label"]
                       axcodes: "%CONSTANTS#axcodes"
+                    - _target_: monai.transforms.Spacingd
+                      keys: ["image", "label"]
+                      pixdim: "%CONSTANTS#spacing"                      
+                      mode: ["bilinear", "nearest"]
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@CONSTANTS#intensity_range[0]"
@@ -197,10 +210,6 @@ system:
                       keys: ["image", "label"]
                       source_key: image
                       margin: 10
-                    - _target_: monai.transforms.RandSpatialCropd
-                      keys: ["image", "label"]
-                      roi_size: "%CONSTANTS#val_max_patch_size"
-                      random_size: False
                     - _target_: monai.transforms.Lambda
                       func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor()}'
                       track_meta: False
@@ -228,5 +237,5 @@ system:
         _target_: monai.inferers.SlidingWindowInferer
         roi_size: "%CONSTANTS#patch_size"
         sw_batch_size: "%system#batch_size"
-        overlap: 0.5
+        overlap: 0.25
         mode: gaussian

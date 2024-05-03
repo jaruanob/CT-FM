@@ -11,8 +11,3 @@ system#model#model#trunk:
 
 
 system#model#model#pre_func: null
-
-
-# Modify for lighter format and convert LPS data format to RAS. 
-system#datasets#train#func: "$lambda dataset: [{'input': np.flip(item[0].astype(np.float32), axis=[2, 1]).copy(), 'target': item[1][0]} for item in dataset]"
-system#datasets#val#func: "$lambda dataset: [{'input': np.flip(item[0].astype(np.float32), axis=[2, 1]).copy(), 'target': item[1][0]} for item in dataset]"
