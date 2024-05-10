@@ -7,12 +7,12 @@ from typing import Dict, List
 from loguru import logger
 
 
-def make_fig(image, preds, point_axs=None, current_idx=None, view=None):
+def make_fig(image, preds, point_axs=None, current_idx=None, view=None, patch_size=None):
     # Convert A to an image
     image = Image.fromarray((image * 255).astype(np.uint8)).convert("RGB")
     enhancer = ImageEnhance.Contrast(image)
     image = enhancer.enhance(2.0)
-
+    
     # Create a yellow mask from B
     if preds is not None:
         mask = np.where(preds == 1, 255, 0).astype(np.uint8)
@@ -26,10 +26,15 @@ def make_fig(image, preds, point_axs=None, current_idx=None, view=None):
     
     if point_axs is not None:
         draw = ImageDraw.Draw(image)
-        radius = 10
+
+        if patch_size is not None:
+            radius = patch_size[-1]//2
+        else:
+            radius = 32
+
         z, y, x = point_axs
         if z == current_idx:
-            draw.ellipse((x-radius, y-radius, x+radius, y+radius), fill="blue")
+            draw.rectangle((x-radius, y-radius, x+radius, y+radius), fill=None, width=3, outline="#2909F1")
     return image
 
 

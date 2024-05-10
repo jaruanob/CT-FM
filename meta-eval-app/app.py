@@ -25,6 +25,8 @@ The app uses the following external functions and modules:
 
 import streamlit as st
 from streamlit_image_coordinates import streamlit_image_coordinates
+st.set_page_config(layout="wide")
+from PIL import Image, ImageDraw
 from utils import make_fig
 from data import load_scan
 from inference import run
@@ -117,7 +119,7 @@ def render_scan_selection(idx):
     setattr(st.session_state, f"selection_{idx}", uploaded_file)
 
 
-def render_image_controls(image_3D, image_idx):
+def render_image_controls(image_3D, image_idx, selected_index=None):
     """
     Renders the image controls (slider for axial view selection).
     
@@ -132,7 +134,7 @@ def render_image_controls(image_3D, image_idx):
         'Axial view',
         0,
         image_3D.shape[0] - 1,
-        image_3D.shape[0] // 2,
+        image_3D.shape[0] // 2 if selected_index is None else selected_index,
         key=f'slider_{image_idx}',
         disabled=st.session_state.running
     )
@@ -150,12 +152,24 @@ def render_axial_view(selected_index, image_3D, image_idx):
     """
     image_array = image_3D[selected_index]
     image_z = make_fig(image_array, None, st.session_state[f"point_{image_idx}"], selected_index, f'view_{image_idx}')
-    value = streamlit_image_coordinates(image_z, width=image_array.shape[1])
-    if value is not None:
-        point_coord = (selected_index, value['y'], value['x'])
-        st.session_state[f"point_{image_idx}"] = point_coord
-        st.rerun()
 
+    if not(st.session_state.finished):
+        size = image_z.size
+        adapted_width = 600
+        adapted_height = int(adapted_width * size[1] / size[0])
+        value = streamlit_image_coordinates(image_z, width=adapted_width)
+        if value is not None:
+            point_coord = (selected_index, value['y']/adapted_height * size[1], value['x']/adapted_width * size[0])
+            st.session_state[f"point_{image_idx}"] = point_coord
+            st.rerun()
+    else:
+        rectangle = st.session_state[f"data_{image_idx}"]["bbox"]
+        if selected_index >= rectangle[0][0] and selected_index <= rectangle[1][0]:
+            draw = ImageDraw.Draw(image_z)
+            rectangle_coords = [(rectangle[0][2], rectangle[0][1]), (rectangle[1][2], rectangle[1][1])]
+            draw.rectangle(rectangle_coords, outline='#2909F1', width=3)
+        st.image(image_z, use_column_width=True)
+        
 def render_action_buttons(count):
     """
     Renders the action buttons (Clear and Run).
@@ -239,7 +253,8 @@ def main():
                 st.write(f"Please select a scan to load for image {idx+1}")
             else:
                 image_3D = getattr(st.session_state, f"data_{idx}")['image'][0].numpy()
-                selected_index = render_image_controls(image_3D, image_idx=idx)
+                selected_index = render_image_controls(image_3D, image_idx=idx, selected_index=st.session_state[f'point_{idx}'][0] if 
+                                                                                    st.session_state.finished else None)
                 render_axial_view(image_3D=image_3D, selected_index=selected_index, image_idx=idx)
 
                 if not st.session_state.finished:
@@ -251,7 +266,7 @@ def main():
     if st.session_state.running:
         st.session_state.running = False
         with st.status("Running...", expanded=False):
-            run(img_count)
+            run(img_count, patch_size=(32, 64, 64))
         st.rerun()
 
 if __name__ == "__main__":

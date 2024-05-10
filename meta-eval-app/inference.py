@@ -5,12 +5,13 @@ from utils import IterableDataset
 import torch
 
 
-def run(count):
+def run(count, patch_size):
     """
     Run the CT-FM algorithm on the selected scans and points.
 
     Args:
         count (int): Number of scans to process.
+        patch_size (tuple): Size of the patch to extract around the selected point.
     """
     # Get the selected images and points from the session state
     images = [st.session_state[f"data_{idx}"]["image"] for idx in range(count)]
@@ -23,8 +24,8 @@ def run(count):
 
     # Crop and pad the reference patch around the selected point
     cropper = monai.transforms.Crop()
-    padder = monai.transforms.SpatialPad(spatial_size=(64, 128, 128), mode="constant")
-    slices = cropper.compute_slices(roi_center=ref_point, roi_size=(64, 128, 128))
+    padder = monai.transforms.SpatialPad(spatial_size=patch_size, mode="constant")
+    slices = cropper.compute_slices(roi_center=ref_point, roi_size=patch_size)
     ref_patch = cropper(ref_image, slices)
     ref_patch = padder(ref_patch)
 
@@ -64,14 +65,14 @@ def run(count):
 
             similarity = []
             
-            splitter = monai.inferers.SlidingWindowSplitter((64, 128, 128), 0.1)
+            splitter = monai.inferers.SlidingWindowSplitter(patch_size, 0.25)
             dataset = IterableDataset(splitter(moving_image.unsqueeze(0)))
             patch_dataloader = torch.utils.data.DataLoader(dataset, batch_size=32)
 
             for patch, location in patch_dataloader:
                 sim = predictor(patch.squeeze(dim=1))
 
-                for d, z, y, x in zip(sim, location[0]+32, location[1]+64, location[2]+64):
+                for d, z, y, x in zip(sim, location[0]+patch_size[0]//2, location[1]+patch_size[1]//2, location[2]+patch_size[2]//2):
                     similarity.append({
                         "sim": d.item(),
                         "location": (z.item(), y.item(), x.item()) 
@@ -84,10 +85,7 @@ def run(count):
             # Find the patch with the minimum distance to the reference patch
             matching_points.append(max_sim["location"])
 
-    # Crop patches around the matching points and update the session state
     for idx, point in enumerate(matching_points):
-        slices = cropper.compute_slices(roi_center=point, roi_size=(64, 128, 128))
-        patch = cropper(images[idx], slices)
-        st.session_state[f"data_{idx}"]["image"] = patch
-            
+        st.session_state[f"data_{idx}"]["bbox"] = ((point[0] - patch_size[0]//2, point[1] - patch_size[1]//2, point[2] - patch_size[2]//2), (point[0] + patch_size[0]//2, point[1] + patch_size[1]//2, point[2] + patch_size[2]//2))
+        st.session_state[f"point_{idx}"] = point
     st.session_state.finished = True
