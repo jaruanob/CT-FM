@@ -10,7 +10,7 @@ class MedNeXt(nn.Module):
     Args:
         init_filters (int): Number of initial filters.
         in_channels (int): Number of input channels.
-        n_classes (int): Number of output classes.
+        out_channels (int): Number of output channels.
         enc_exp_r (int, optional): Expansion ratio for encoder blocks. Defaults to 2.
         dec_expr_r (int, optional): Expansion ratio for decoder blocks. Defaults to 2.
         bottlenec_exp_r (int, optional): Expansion ratio for bottleneck blocks. Defaults to 2.
@@ -18,17 +18,17 @@ class MedNeXt(nn.Module):
         deep_supervision (bool, optional): Whether to use deep supervision. Defaults to False.
         do_res (bool, optional): Whether to use residual connections. Defaults to False.
         do_res_up_down (bool, optional): Whether to use residual connections in up and down blocks. Defaults to False.
-        enc_blocks (list, optional): Number of blocks in each encoder stage. Defaults to [2, 2, 2, 2].
-        bottleneck_blocks (list, optional): Number of blocks in bottleneck stage. Defaults to 2.
-        dec_blocks (list, optional): Number of blocks in each decoder stage. Defaults to [2, 2, 2, 2].
+        blocks_down (list, optional): Number of blocks in each encoder stage. Defaults to [2, 2, 2, 2].
+        blocks_bottleneck (int, optional): Number of blocks in bottleneck stage. Defaults to 2.
+        blocks_up (list, optional): Number of blocks in each decoder stage. Defaults to [2, 2, 2, 2].
         norm_type (str, optional): Type of normalization layer. Defaults to 'group'.
-        dim (str, optional): Dimension of the model ('2d' or '3d'). Defaults to '3d'.
+        spatial_dims (int, optional): Spatial dimensions of the model (2 or 3). Defaults to 3.
         grn (bool, optional): Whether to use Global Response Normalization (GRN). Defaults to False.
     """
     def __init__(self, 
         init_filters: int, 
         in_channels: int,
-        n_classes: int, 
+        out_channels: int, 
         enc_exp_r: int = 2,
         dec_expr_r: int = 2,
         bottlenec_exp_r: int = 2,
@@ -36,11 +36,11 @@ class MedNeXt(nn.Module):
         deep_supervision: bool = False,
         do_res: bool = False,
         do_res_up_down: bool = False,
-        enc_blocks: list = [2, 2, 2, 2],  
-        bottleneck_blocks: list = 2,
-        dec_blocks: list = [2, 2, 2, 2],
+        blocks_down: list = [2, 2, 2, 2],  
+        blocks_bottleneck: int = 2,
+        blocks_up: list = [2, 2, 2, 2],
         norm_type = 'group',
-        dim = '3d',
+        spatial_dims = 3,
         grn = False
     ):
         """
@@ -56,23 +56,24 @@ class MedNeXt(nn.Module):
         super().__init__()
 
         self.do_ds = deep_supervision
-        assert dim in ['2d', '3d'], "dim must be '2d' or '3d'"
+        assert spatial_dims in [2, 3], "spatial_dims must be '2' or '3'"
+        spatial_dims = f"{spatial_dims}d"
         enc_kernel_size = dec_kernel_size = kernel_size
 
         if isinstance(enc_exp_r, int):
-            enc_exp_r = [enc_exp_r] * len(enc_blocks)
+            enc_exp_r = [enc_exp_r] * len(blocks_down)
 
         if isinstance(dec_expr_r, int):
-            dec_expr_r = [dec_expr_r] * len(dec_blocks)
+            dec_expr_r = [dec_expr_r] * len(blocks_up)
 
-        conv = nn.Conv2d if dim == '2d' else nn.Conv3d
+        conv = nn.Conv2d if spatial_dims == "2d" else nn.Conv3d
             
         self.stem = conv(in_channels, init_filters, kernel_size=1)
         
         enc_stages = []
         down_blocks = []
 
-        for i, num_blocks in enumerate(enc_blocks):
+        for i, num_blocks in enumerate(blocks_down):
             enc_stages.append(nn.Sequential(*[
                 MedNeXtBlock(
                     in_channels=init_filters * (2 ** i),
@@ -81,7 +82,7 @@ class MedNeXt(nn.Module):
                     kernel_size=enc_kernel_size,
                     do_res=do_res,
                     norm_type=norm_type,
-                    dim=dim,
+                    dim=spatial_dims,
                     grn=grn
                 ) 
                 for _ in range(num_blocks)]
@@ -94,7 +95,7 @@ class MedNeXt(nn.Module):
                 kernel_size=enc_kernel_size,
                 do_res=do_res_up_down,
                 norm_type=norm_type,
-                dim=dim
+                dim=spatial_dims
             ))
     
         self.enc_stages = nn.ModuleList(enc_stages)
@@ -102,41 +103,41 @@ class MedNeXt(nn.Module):
 
         self.bottleneck = nn.Sequential(*[
             MedNeXtBlock(
-                in_channels=init_filters * (2 ** len(enc_blocks)),
-                out_channels=init_filters * (2 ** len(enc_blocks)),
+                in_channels=init_filters * (2 ** len(blocks_down)),
+                out_channels=init_filters * (2 ** len(blocks_down)),
                 exp_r=bottlenec_exp_r,
                 kernel_size=dec_kernel_size,
                 do_res=do_res,
                 norm_type=norm_type,
-                dim=dim,
+                dim=spatial_dims,
                 grn=grn
             )
-            for _ in range(bottleneck_blocks)]
+            for _ in range(blocks_bottleneck)]
         )
         
         up_blocks = []
         dec_stages = []
-        for i, num_blocks in enumerate(dec_blocks):
+        for i, num_blocks in enumerate(blocks_up):
             up_blocks.append(MedNeXtUpBlock(
-                in_channels=init_filters * (2 ** (len(dec_blocks) - i)),
-                out_channels=init_filters * (2 ** (len(dec_blocks) - i - 1)),
+                in_channels=init_filters * (2 ** (len(blocks_up) - i)),
+                out_channels=init_filters * (2 ** (len(blocks_up) - i - 1)),
                 exp_r=dec_expr_r[i],
                 kernel_size=dec_kernel_size,
                 do_res=do_res_up_down,
                 norm_type=norm_type,
-                dim=dim,
+                dim=spatial_dims,
                 grn=grn
             ))
             
             dec_stages.append(nn.Sequential(*[
                 MedNeXtBlock(
-                    in_channels=init_filters * (2 ** (len(dec_blocks) - i - 1)),
-                    out_channels=init_filters * (2 ** (len(dec_blocks) - i - 1)),
+                    in_channels=init_filters * (2 ** (len(blocks_up) - i - 1)),
+                    out_channels=init_filters * (2 ** (len(blocks_up) - i - 1)),
                     exp_r=dec_expr_r[i],
                     kernel_size=dec_kernel_size,
                     do_res=do_res,
                     norm_type=norm_type,
-                    dim=dim,
+                    dim=spatial_dims,
                     grn=grn
                 )
                 for _ in range(num_blocks)]
@@ -145,13 +146,17 @@ class MedNeXt(nn.Module):
         self.up_blocks = nn.ModuleList(up_blocks)
         self.dec_stages = nn.ModuleList(dec_stages)
 
-        self.out_0 = OutBlock(in_channels=init_filters, n_classes=n_classes, dim=dim)
+        self.out_0 = OutBlock(in_channels=init_filters, n_classes=out_channels, dim=spatial_dims)
 
         if deep_supervision:
-            self.out_blocks = nn.ModuleList([
-                OutBlock(in_channels=init_filters * (2 ** i), n_classes=n_classes, dim=dim) 
-                for i in range(1, len(enc_blocks))
-            ])
+            out_blocks = [
+                OutBlock(in_channels=init_filters * (2 ** i), n_classes=out_channels, dim=spatial_dims) 
+                for i in range(1, len(blocks_up))
+            ]
+
+            out_blocks.reverse()
+            self.out_blocks = nn.ModuleList(out_blocks)
+
 
     def forward(self, x):
         """
@@ -185,21 +190,25 @@ class MedNeXt(nn.Module):
         
         # Initialize deep supervision outputs if enabled
         if self.do_ds:
-            ds_outputs = [self.out_blocks[-1](x)]
-        
+            ds_outputs = []
+
         # Decoder forward pass with skip connections
         for i, (up_block, dec_stage) in enumerate(zip(self.up_blocks, self.dec_stages)):
+            if self.do_ds and i < len(self.out_blocks):
+                ds_outputs.append(self.out_blocks[i](x))
+
             x = up_block(x)
-            x = x + enc_outputs[-(i + 1)]
+            x = x + enc_outputs[-(i+1)]
             x = dec_stage(x)
-            if self.do_ds:
-                ds_outputs.append(self.out_blocks[-(i + 1)](x))
+
         
         # Final output block
         x = self.out_0(x)
         
         # Return output(s)
         if self.do_ds:
+            print(len(ds_outputs))
+
             return [x] + list(reversed(ds_outputs))
         else:
             return x
