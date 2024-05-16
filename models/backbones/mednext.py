@@ -151,7 +151,7 @@ class MedNeXt(nn.Module):
         if deep_supervision:
             out_blocks = [
                 OutBlock(in_channels=init_filters * (2 ** i), n_classes=out_channels, dim=spatial_dims) 
-                for i in range(1, len(blocks_up))
+                for i in range(1, len(blocks_up) + 1)
             ]
 
             out_blocks.reverse()
@@ -207,8 +207,6 @@ class MedNeXt(nn.Module):
         
         # Return output(s)
         if self.do_ds:
-            print(len(ds_outputs))
-
-            return [x] + list(reversed(ds_outputs))
+            return (x, *ds_outputs[::-1])
         else:
             return x
