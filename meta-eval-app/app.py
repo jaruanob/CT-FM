@@ -141,7 +141,7 @@ def render_image_controls(image_3D, image_idx, selected_index=None):
     return selected_index
 
 
-def render_axial_view(selected_index, image_3D, image_idx):
+def render_axial_view(selected_index, image_3D, image_idx, patch_size=None):
     """
     Renders the axial view of the selected scan and allows point selection.
     
@@ -151,7 +151,7 @@ def render_axial_view(selected_index, image_3D, image_idx):
         image_idx (int): Index of the image.
     """
     image_array = image_3D[selected_index]
-    image_z = make_fig(image_array, None, st.session_state[f"point_{image_idx}"], selected_index, f'view_{image_idx}')
+    image_z = make_fig(image_array, None, st.session_state[f"point_{image_idx}"], selected_index, f'view_{image_idx}', patch_size=patch_size)
 
     if not(st.session_state.finished):
         size = image_z.size
@@ -163,11 +163,11 @@ def render_axial_view(selected_index, image_3D, image_idx):
             st.session_state[f"point_{image_idx}"] = point_coord
             st.rerun()
     else:
-        rectangle = st.session_state[f"data_{image_idx}"]["bbox"]
-        if selected_index >= rectangle[0][0] and selected_index <= rectangle[1][0]:
-            draw = ImageDraw.Draw(image_z)
-            rectangle_coords = [(rectangle[0][2], rectangle[0][1]), (rectangle[1][2], rectangle[1][1])]
-            draw.rectangle(rectangle_coords, outline='#2909F1', width=3)
+        # rectangle = st.session_state[f"data_{image_idx}"]["bbox"]
+        # if selected_index >= rectangle[0][0] and selected_index <= rectangle[1][0]:
+        #     draw = ImageDraw.Draw(image_z)
+        #     rectangle_coords = [(rectangle[0][2], rectangle[0][1]), (rectangle[1][2], rectangle[1][1])]
+        #     draw.rectangle(rectangle_coords, outline='#2909F1', width=3)
         st.image(image_z, use_column_width=True)
         
 def render_action_buttons(count):
@@ -215,6 +215,7 @@ def main():
     The main function that puts together the UI components and handles the app flow.
     """
     img_count = 2
+    patch_size = (32, 64, 64)
     col_gap = "large"
     st.title("CT-FM Demonstration App")
     init_states(count=img_count)
@@ -255,7 +256,7 @@ def main():
                 image_3D = getattr(st.session_state, f"data_{idx}")['image'][0].numpy()
                 selected_index = render_image_controls(image_3D, image_idx=idx, selected_index=st.session_state[f'point_{idx}'][0] if 
                                                                                     st.session_state.finished else None)
-                render_axial_view(image_3D=image_3D, selected_index=selected_index, image_idx=idx)
+                render_axial_view(image_3D=image_3D, selected_index=selected_index, image_idx=idx, patch_size=patch_size)
 
                 if not st.session_state.finished:
                     st.write(f"Selected point: {st.session_state[f'point_{idx}']}")
@@ -266,7 +267,7 @@ def main():
     if st.session_state.running:
         st.session_state.running = False
         with st.status("Running...", expanded=False):
-            run(img_count, patch_size=(32, 64, 64))
+            run(img_count, patch_size=patch_size)
         st.rerun()
 
 if __name__ == "__main__":

@@ -1,9 +1,11 @@
 from PIL import Image, ImageEnhance, ImageDraw
 import streamlit as st
 import numpy as np
+import cv2
 import torch
 from torch.nn import Module
 from typing import Dict, List
+import matplotlib.pyplot as plt
 from loguru import logger
 
 
@@ -115,3 +117,49 @@ class IterableDataset(torch.utils.data.IterableDataset):
 
     def __iter__(self):
         return self.generator
+    
+
+import numpy as np
+import cv2
+
+def blend_3d_image_with_intensity_map(image: torch.Tensor, intensity_map: torch.Tensor, blend_factor: float) -> torch.Tensor:
+    """
+    Blend a 3D image with an intensity map displayed as a jet colormap overlay.
+
+    Parameters:
+    - image: 3D numpy array with shape (D, H, W) and values in range [0, 1]
+    - intensity_map: 3D numpy array with shape (D, H, W) and values in range [0, 1]
+    - blend_factor: float in range [0, 1] determining the blend weight
+
+    Returns:
+    - blended_image: 3D numpy array with shape (D, H, W, 3) and values in range [0, 1]
+    """
+    if image.shape != intensity_map.shape:
+        raise ValueError("Image and intensity map must have the same shape")
+    if not (0 <= blend_factor <= 1):
+        raise ValueError("Blend factor must be in the range [0, 1]")
+    
+    image = image.numpy()
+    intensity_map = intensity_map.numpy()
+
+    image = image.squeeze()
+    intensity_map = intensity_map.squeeze()
+
+    # Normalize image to range [0, 255]
+    image = (image * 255).astype(np.uint8)
+
+    # Apply jet colormap to intensity map
+    jet_colormap = plt.get_cmap('magma')
+    intensity_map_colored = jet_colormap(intensity_map)[:, :, :, :3]  # Drop the alpha channel
+    intensity_map_colored = (intensity_map_colored * 255).astype(np.uint8)
+
+    # Blend the original image with the jet colormap overlay
+    blended_image = np.zeros((image.shape[0], image.shape[1], image.shape[2], 3), dtype=np.float32)
+    for i in range(image.shape[0]):
+        img_color = cv2.cvtColor(image[i], cv2.COLOR_GRAY2BGR)
+        blended_image[i] = cv2.addWeighted(img_color.astype(np.float32), 1 - blend_factor, intensity_map_colored[i].astype(np.float32), blend_factor, 0)
+
+    # Normalize blended image to range [0, 1]
+    blended_image = blended_image / 255.0
+
+    return torch.tensor(blended_image).unsqueeze(0)

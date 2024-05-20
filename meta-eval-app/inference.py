@@ -1,7 +1,7 @@
 import streamlit as st
 import monai
 from model import load_model
-from utils import IterableDataset
+from utils import IterableDataset, blend_3d_image_with_intensity_map
 import torch
 
 
@@ -56,36 +56,45 @@ def run(count, patch_size):
             sim = sim_fn(pred, ref_embedding)
             return sim
 
+        moving_images = []
         matching_points = []
         for idx, moving_image in enumerate(images):
             if idx == ref_idx:
-                # Skip the reference image and use the selected point
-                matching_points.append(ref_point)
+                # Skip the reference image
+                moving_images.append(None)
+                matching_points.append(None)
                 continue
-
-            similarity = []
             
-            splitter = monai.inferers.SlidingWindowSplitter(patch_size, 0.25)
+            splitter = monai.inferers.SlidingWindowSplitter(patch_size, 0.625)
             dataset = IterableDataset(splitter(moving_image.unsqueeze(0)))
             patch_dataloader = torch.utils.data.DataLoader(dataset, batch_size=32)
 
+
+            similarity = []
+            sim_heatmap = torch.zeros(moving_image.shape)
             for patch, location in patch_dataloader:
                 sim = predictor(patch.squeeze(dim=1))
 
-                for d, z, y, x in zip(sim, location[0]+patch_size[0]//2, location[1]+patch_size[1]//2, location[2]+patch_size[2]//2):
+                for d, z, y, x in zip(sim, location[0], location[1], location[2]):
                     similarity.append({
                         "sim": d.item(),
-                        "location": (z.item(), y.item(), x.item()) 
+                        "location": (z.item()+patch_size[0]//2, y.item()+patch_size[1]//2, x.item()+patch_size[2]//2) 
                     })
 
-            print(len(similarity))
+                    sim_heatmap[0, z:z+patch_size[0], y:y+patch_size[1], x:x+patch_size[2]] = d.item()
+
             sorted_sim = sorted(similarity, key=lambda x: x["sim"])
-            print(sorted_sim[0], sorted_sim[-1])
             max_sim = sorted_sim[-1]
             # Find the patch with the minimum distance to the reference patch
             matching_points.append(max_sim["location"])
+            sim_heatmap = (sim_heatmap - sim_heatmap.min()) / (sim_heatmap.max() - sim_heatmap.min())
+            sim_heatmap = monai.transforms.GaussianSmooth(sigma=5.0)(sim_heatmap)
+            moving_images.append(sim_heatmap)
 
-    for idx, point in enumerate(matching_points):
-        st.session_state[f"data_{idx}"]["bbox"] = ((point[0] - patch_size[0]//2, point[1] - patch_size[1]//2, point[2] - patch_size[2]//2), (point[0] + patch_size[0]//2, point[1] + patch_size[1]//2, point[2] + patch_size[2]//2))
-        st.session_state[f"point_{idx}"] = point
+    for idx, heatmap in enumerate(moving_images):
+        if heatmap is not None:
+            blended = blend_3d_image_with_intensity_map(images[idx], heatmap, 0.5)
+            st.session_state[f"data_{idx}"]["image"] = blended
+            st.session_state[f"point_{idx}"] = matching_points[idx]
+
     st.session_state.finished = True
