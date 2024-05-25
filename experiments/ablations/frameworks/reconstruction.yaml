@@ -1,6 +1,6 @@
 CONSTANTS#FRAMEWORK: Reconstruction
-CONSTANTS#PATCH_SIZE_MM: [64, 128, 128] # Patch size in mm 
-CONSTANTS#PATCH_SIZE_VOXELS: "$[math.ceil((@CONSTANTS#PATCH_SIZE_MM[i]//@CONSTANTS#SPACING[i])/16) * 16 for i in range(3)]"
+# CONSTANTS#PATCH_SIZE_MM: [64, 128, 128] # Patch size in mm 
+CONSTANTS#PATCH_SIZE_VOXELS: [64, 320, 320]
 _requires_: "$import math"
 
 system#model:

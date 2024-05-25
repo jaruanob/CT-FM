@@ -1,0 +1,11 @@
+CONSTANTS#name: random_init_mednext_default
+system#model#trunk:
+    _target_: nnunet_mednext.create_mednext_v1
+    num_input_channels: "%CONSTANTS#in_channels"
+    model_id: 'L'
+    num_classes: "%CONSTANTS#out_channels"
+    deep_supervision: True
+    kernel_size: 5
+
+CONSTANTS#init_LR: 0.001
+trainer#strategy: ddp_find_unused_parameters_false

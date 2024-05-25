@@ -1,8 +1,6 @@
-CONSTANTS#FRAMEWORK: SimCLR
-CONSTANTS#PATCH_SIZE_MM: [64, 128, 128] # Patch size in mm 
-CONSTANTS#PATCH_SIZE_VOXELS: "$[math.ceil((@CONSTANTS#PATCH_SIZE_MM[i]//@CONSTANTS#SPACING[i])/16) * 16 for i in range(3)]"
+CONSTANTS#FRAMEWORK: SimCLR_Cross_Sample
+CONSTANTS#PATCH_SIZE_VOXELS: [64, 320, 320]
 _requires_: "$import math"
-CONSTANTS#NUM_CONTRASTIVE_CROPS: 16
 
 
 system#model: 
@@ -12,7 +10,7 @@ system#model:
 
 
 system#criterion:
-    _target_: project.loss.intrasample_ntxent_loss.IntraSampleNTXEntLoss
+    _target_: project.loss.ntxent_loss.NTXentLoss
     temperature: 0.1
 
 
@@ -22,8 +20,6 @@ system#datasets#train#dataset#transform:
     _target_: torchvision.transforms.Compose
     transforms:
         - _target_: monai.transforms.Compose
-          # `map_items=True` - When input to a Transform is a list, apply the transform to each element of the list.
-          map_items: True
           transforms:
               - _target_: monai.transforms.LoadImage
                 image_only: True
@@ -47,16 +43,10 @@ system#datasets#train#dataset#transform:
                 b_min: 0
                 b_max: 1
                 clip: True
-              # Turn into a dict of views
+              - _target_: monai.transforms.RandSpatialCrop
+                roi_size: "%CONSTANTS#PATCH_SIZE_VOXELS"
               - _target_: monai.transforms.Lambda
                 func: '$lambda x: {"view_0": x}'
-              # From this point it's not a Tensor anymore, but a list of NUM_CONTRASTIVE_CROPS Tensors
-              - _target_: monai.transforms.RandSpatialCropSamplesd
-                keys: view_0
-                roi_size: "%CONSTANTS#PATCH_SIZE_VOXELS"
-                num_samples: "%CONSTANTS#NUM_CONTRASTIVE_CROPS"
-                lazy: True
-              # Duplicate the view
               - _target_: monai.transforms.CopyItemsd
                 keys: view_0
                 names: view_1
@@ -100,11 +90,4 @@ system#datasets#train#dataset#transform:
                 keys: ["view_0", "view_1"]
                 track_meta: False
               - _target_: monai.transforms.Lambda
-                func: '$lambda x: (x["view_0"], x["view_1"])'
-
-        # Disable map_items so that the whole list of NUM_CONTRASTIVE_CROPS Tensors is wrapped into input instead of its elements
-        - _target_: monai.transforms.Compose
-          map_items: False
-          transforms:
-              - _target_: monai.transforms.Lambda
-                func: '$lambda x: {"input": x}'
+                func: '$lambda x: {"input": (x["view_0"], x["view_1"])}'

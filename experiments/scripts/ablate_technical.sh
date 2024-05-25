@@ -1,0 +1,4 @@
+lighter fit --config_file=./experiments/ablations/base.yaml,./experiments/ablations/frameworks/reconstruction.yaml,./experiments/ablations/backbones/segresnetds.yaml
+lighter fit --config_file=./experiments/ablations/base.yaml,./experiments/ablations/frameworks/simclr_cross_sample.yaml,./experiments/ablations/backbones/segresenc.yaml
+lighter fit --config_file=./experiments/ablations/base.yaml,./experiments/ablations/frameworks/simclr.yaml,./experiments/ablations/backbones/segresenc.yaml
+lighter fit --config_file=./experiments/ablations/base.yaml,./experiments/ablations/frameworks/conrecon.yaml,./experiments/ablations/backbones/segresnetds_w_embedding.yaml
