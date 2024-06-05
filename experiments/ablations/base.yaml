@@ -11,7 +11,7 @@ trainer:
     max_epochs: 25
     limit_train_batches: 500
     accelerator: gpu
-    devices: 4
+    devices: 3
     strategy: ddp
     sync_batchnorm: True
     precision: 16-mixed
@@ -33,20 +33,33 @@ system:
     _target_: lighter.LighterSystem
     batch_size: 5
     pin_memory: True
-    num_workers: 10
+    num_workers: 8
 
     model:
   
     optimizer:
         _target_: torch.optim.AdamW
         params: "$@system#model.parameters()"
+        # Learning rate calculated as per: `lr = (effective_batch_size) / 256 * base_lr`
+        lr: 0.0001
         weight_decay: 0.000001
   
+
     scheduler:
         _target_: torch.optim.lr_scheduler.CosineAnnealingLR
         optimizer: "@system#optimizer"
         T_max: "%trainer#max_epochs"
-        eta_min: 0
+        eta_min: 0.000001
+
+        ## Fallback when LR is too high
+        # _target_: monai.optimizers.WarmupCosineSchedule
+        # optimizer: "@system#optimizer"
+        # # Ablations - 5 epochs warmup
+        # warmup_steps: 3  # First 10 epochs
+        # warmup_multiplier: 0.1
+        # t_total: $@trainer#max_epochs
+        # # Ablations - don't let the learning rate go low
+        # end_lr: "$@system#optimizer#lr / 100"
 
     datasets:
         train:

@@ -5,9 +5,11 @@ _requires_: "$import math"
 CONSTANTS#NUM_CONTRASTIVE_CROPS: 8
 
 system#model: 
-    _target_: project.models.frameworks.conrecon.ConRecon
-    num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#BACKBONE_NAME]'
-    backbone:
+    _target_: torch.compile
+    model:
+      _target_: project.models.frameworks.conrecon.ConRecon
+      num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#BACKBONE_NAME]'
+      backbone:
 
 system#criterion:
     _target_: project.loss.conrecon_loss.ConReconLoss

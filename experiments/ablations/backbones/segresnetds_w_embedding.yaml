@@ -1,7 +1,7 @@
 CONSTANTS#BACKBONE_NAME: SegResNetDS
 
 # This architecture is used by ConRecon.
-system#model#backbone: 
+system#model#model#backbone: 
     _target_: project.models.backbones.segresnetds_w_embedding.SegResNetDSwEmbedding
     spatial_dims: 3
     in_channels: 1

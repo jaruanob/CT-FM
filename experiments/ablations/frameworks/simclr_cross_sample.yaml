@@ -4,15 +4,19 @@ _requires_: "$import math"
 
 
 system#model: 
-    _target_: project.models.frameworks.simclr.SimCLR
-    num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#BACKBONE_NAME]'
-    backbone:
+    _target_: torch.compile
+    model:
+      _target_: project.models.frameworks.simclr.SimCLR
+      num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#BACKBONE_NAME]'
+      backbone:
 
+
+# system#optimizer#lr: 0.0001
 
 system#criterion:
     _target_: project.loss.ntxent_loss.NTXentLoss
     temperature: 0.1
-
+    gather_distributed: True
 
 system#datasets#train#dataset#transform:
     # Parent torchvision Compose so that the monai Compose children can have different map_items.
