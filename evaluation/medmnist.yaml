@@ -38,29 +38,27 @@ system:
     pin_memory: True
     num_workers: 8
     model:
-        _target_: torch.compile
-        model:
-            _target_: project.models.wrapper.TrunkHeadWrapper
-            trunk:
-                _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
-                ckpt_path: /mnt/data1/CT_FM/IDC_SSL_CT/runs/checkpoints/CT_FM_Reconstruction_SegResNetDS/epoch=79-step=40000.ckpt
-                ckpt_to_model_prefix: '${"backbone.encoder" : ""} if "recon" in @CONSTANTS#name else {"backbone.": ""}'
-                model:
-                    _target_: monai.networks.nets.segresnet_ds.SegResEncoder
-                    spatial_dims: 3
-                    in_channels: "@CONSTANTS#in_channels"
-                    init_filters: 32
-                    blocks_down: [1, 2, 2, 4, 4]
+        _target_: project.models.wrapper.TrunkHeadWrapper
+        trunk:
+            _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
+            ckpt_path: /mnt/data1/CT_FM/IDC_SSL_CT/runs/checkpoints/CT_FM_Reconstruction_SegResNetDS/epoch=79-step=40000.ckpt
+            ckpt_to_model_prefix: '${"backbone.encoder" : ""} if "recon" in @CONSTANTS#name else {"backbone.": ""}'
+            model:
+                _target_: monai.networks.nets.segresnet_ds.SegResEncoder
+                spatial_dims: 3
+                in_channels: "@CONSTANTS#in_channels"
+                init_filters: 32
+                blocks_down: [1, 2, 2, 4, 4]
 
-            head:
-                - _target_: torch.nn.AdaptiveAvgPool3d
-                  output_size: 1
-                - _target_: torch.nn.Flatten
-                - _target_: torch.nn.Linear
-                  in_features: "@CONSTANTS#embedding_dim"
-                  out_features: "@CONSTANTS#num_classes"
-            pre_func: 
-                - "$lambda x: x[-1]"
+        head:
+            - _target_: torch.nn.AdaptiveAvgPool3d
+              output_size: 1
+            - _target_: torch.nn.Flatten
+            - _target_: torch.nn.Linear
+              in_features: "@CONSTANTS#embedding_dim"
+              out_features: "@CONSTANTS#num_classes"
+        pre_func: 
+            - "$lambda x: x[-1]"
             
     criterion:
         _target_: "$torch.nn.CrossEntropyLoss if @CONSTANTS#num_classes > 1 else torch.nn.BCEWithLogitsLoss"

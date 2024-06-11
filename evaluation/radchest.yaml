@@ -7,7 +7,7 @@ CONSTANTS:
     size: [96, 128, 128]
     in_channels: 1
     embedding_dim: 512
-    cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@CONSTANTS#format}"'
+    cache_dir: '$f"/mnt/data1/suraj/lighter_cache/radchest/{@CONSTANTS#format}"'
     format: "$'suprem' if 'suprem' in @CONSTANTS#name else 'lighter'"
     # Transforms the RadChest format to either lighter format (SPL, default) or SuPREM format (RAS)
     dataset_specific_transform: "$lambda x: torch.flip(x, [1]) if @CONSTANTS#format == 'lighter' else torch.flip(x.permute(0, 3, 2, 1), [2, 3])"

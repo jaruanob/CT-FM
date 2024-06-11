@@ -19,16 +19,18 @@ class TrunkHeadWrapper(nn.Module):
 
     def forward(self, x):
         x = self.trunk(x)
+        
         if self.pre_func is not None:
             x = apply_fns(x, self.pre_func)
-        x = self.head(x)
+
+        if self.head is not None:
+            x = self.head(x)
+            
         return x
     
 
     def _init_head(self, head):
-        if head is None:
-            return nn.Identity()
-        elif isinstance(head, list):
+        if isinstance(head, list):
             return nn.Sequential(*head)
         else:
             return head
