@@ -1,0 +1,123 @@
+project: .
+CONSTANTS:
+    init_LR: 0.001
+    project: "ct_fm_quick_class_eval"
+    in_channels: 1
+    embedding_dim: 512
+    format: "$'suprem' if 'suprem' in @CONSTANTS#name else 'lighter'"
+    # Transforms the MedMNIST format to either lighter format (SPL, default) or SuPREM format (RAS)
+    dataset_specific_transform: "$lambda dataset: [{'input': item[0].astype(np.float32).transpose(0, 3, 2, 1) if @CONSTANTS#format == 'lighter' else np.flip(item[0].astype(np.float32), axis=[2, 1]).copy(), 'target': item[1][0]} for item in dataset]"
+
+trainer:
+    _target_: pytorch_lightning.Trainer
+    benchmark: True
+    max_epochs: 100
+    check_val_every_n_epoch: 1
+    accelerator: gpu
+    # ---------
+    devices: 1
+    strategy: ddp_find_unused_parameters_true
+    sync_batchnorm: True
+    # ---------
+    precision: 16-mixed
+    log_every_n_steps: 10
+    logger:
+        _target_: pytorch_lightning.loggers.WandbLogger
+        project: "@CONSTANTS#project"
+        name: '$f"{@CONSTANTS#name}"'
+        save_dir: '$f"/mnt/data1/CT_FM/{@CONSTANTS#project}/logs/{@CONSTANTS#name}"'
+
+    callbacks:
+        - _target_: lighter.callbacks.LighterFreezer
+          # _orig_mod is torch.compile added notation
+          name_starts_with: ["_orig_mod.trunk"]
+
+system:
+    _target_: lighter.LighterSystem
+    batch_size: 128
+    pin_memory: True
+    num_workers: 8
+    model:
+        _target_: project.models.wrapper.TrunkHeadWrapper
+        trunk:
+            _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
+            ckpt_path: /mnt/data1/CT_FM/IDC_SSL_CT/runs/checkpoints/CT_FM_Reconstruction_SegResNetDS/epoch=79-step=40000.ckpt
+            ckpt_to_model_prefix: '${"backbone.encoder" : ""} if "recon" in @CONSTANTS#name else {"backbone.": ""}'
+            model:
+                _target_: monai.networks.nets.segresnet_ds.SegResEncoder
+                spatial_dims: 3
+                in_channels: "@CONSTANTS#in_channels"
+                init_filters: 32
+                blocks_down: [1, 2, 2, 4, 4]
+
+        head:
+            - _target_: torch.nn.AdaptiveAvgPool3d
+              output_size: 1
+            - _target_: torch.nn.Flatten
+            - _target_: torch.nn.Linear
+              in_features: "@CONSTANTS#embedding_dim"
+              out_features: "@CONSTANTS#num_classes"
+        pre_func: 
+            - "$lambda x: x[-1]"
+            
+    criterion:
+        _target_: "$torch.nn.CrossEntropyLoss if @CONSTANTS#num_classes > 1 else torch.nn.BCEWithLogitsLoss"
+
+    optimizer:
+        _target_: torch.optim.AdamW
+        params: "$@system#model.parameters()"
+        lr: "%CONSTANTS#init_LR"
+        weight_decay: 1.0e-05 
+
+    scheduler:
+        _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+        optimizer: "@system#optimizer"
+        T_max: "%trainer#max_epochs"
+        eta_min: 0
+
+    metrics:
+        train:
+            - _target_: torchmetrics.AUROC
+              task: multiclass # Note: Change to `binary` for Task 2 and Task 3 and remove num_classes below
+              num_classes: "@CONSTANTS#num_classes"
+        val: "%#train"
+        test: "%#train"
+
+    datasets:
+        train:
+            _target_: monai.data.DatasetFunc
+            data:
+                _target_: "@CONSTANTS#dataset"
+                split: "train"
+                download: True
+                size: 64
+
+            # Func converts the dataset to lighter format and transposes input so it follows SPL convention                
+            func: "@CONSTANTS#dataset_specific_transform"
+
+        val:
+            _target_: monai.data.DatasetFunc
+            data:
+                _target_: "@CONSTANTS#dataset"
+                split: "val"
+                download: True
+                size: 64
+
+            # Func converts the dataset to lighter format and transposes input so it follows SPL convention
+            func: "@CONSTANTS#dataset_specific_transform"
+
+    postprocessing:
+        metrics:
+            pred: # Pred for torchmetrics is (N, C, ...)
+                - "$lambda x: torch.softmax(x, 1)"
+
+            target:
+                # Remove the channel dim. Target for torchmetrics is (N, ...)
+                - "$lambda tensor: tensor.long()"
+        logging:              
+            pred:
+                - "$lambda x: x.argmax(dim=1, keepdim=True)"
+                - "$lambda x: x.float()"
+            target:
+                - "$lambda x: x.unsqueeze(1)"
+                - "$lambda x: x.float()"

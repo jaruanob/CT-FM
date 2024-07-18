@@ -2,7 +2,7 @@ vars#FRAMEWORK: SimCLR
 vars#PATCH_SIZE_MM: [64, 128, 128] # Patch size in mm 
 vars#PATCH_SIZE_VOXELS: "$[math.ceil((@vars#PATCH_SIZE_MM[i]//@vars#SPACING[i])/16) * 16 for i in range(3)]"
 _requires_: "$import math"
-vars#NUM_CONTRASTIVE_CROPS: 8
+CONSTANTS#NUM_CONTRASTIVE_CROPS: 16
 
 
 system#model: 
