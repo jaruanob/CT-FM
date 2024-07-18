@@ -4,7 +4,7 @@ vars#PATCH_SIZE_VOXELS: "$[math.ceil((@vars#PATCH_SIZE_MM[i]//@vars#SPACING[i])/
 _requires_: "$import math"
 vars#NUM_CONTRASTIVE_CROPS: 8
 
-system#model:
+system#model: 
     _target_: project.models.frameworks.conrecon.ConRecon
     num_ftrs: '$@vars#NUM_FTRS_BY_BACKBONE[@vars#BACKBONE_NAME]'
     backbone:
@@ -18,8 +18,8 @@ system#criterion:
       _target_: monai.losses.DeepSupervisionLoss
       loss:
           _target_: torch.nn.MSELoss
-    alpha: 1
-    beta: 10
+    alpha: 0.5
+    beta: 0.5
 
 system#datasets#train#dataset#transform:
     # Parent torchvision Compose so that the monai Compose children can have different map_items.
@@ -118,6 +118,9 @@ system#datasets#train#dataset#transform:
                 max_spatial_size: "$[int(dim*0.5) for dim in @vars#PATCH_SIZE_VOXELS]"
                 prob: 1
                 fill_value: 0
+              - _target_: monai.transforms.SignalFillEmptyd
+                keys: ["masked_view_0", "masked_view_1", "view_0", "view_1"]
+                replacement: 0.0
               - _target_: monai.transforms.ToTensord
                 keys: ["masked_view_0", "masked_view_1", "view_0", "view_1"]
                 track_meta: False

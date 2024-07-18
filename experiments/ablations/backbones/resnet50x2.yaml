@@ -1,5 +1,5 @@
 # NOTE: This one wasn't used in ablations - move it later
-CONSTANTS#BACKBONE_NAME: ResNet50x2
+vars#BACKBONE_NAME: ResNet50x2
 
 # This architecture is used by SimCLR and VicRegL.
 system#model#backbone:

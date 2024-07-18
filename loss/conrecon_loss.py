@@ -22,23 +22,25 @@ class ConReconLoss(nn.Module):
     This class implements the ConReconLoss, a loss function used for contrastive learning + reconstruction
     """
 
-    def __init__(self, contrastive_loss: nn.Module, reconstruction_loss: nn.Module, contrastive_weight: float = 0.5):
+    def __init__(self, contrastive_loss: nn.Module, reconstruction_loss: nn.Module, alpha: float, beta: float):
         """
         Initialize an instance of the class.
 
         Args:
         """
         super().__init__()
-        self.contrastive_loss = contrastive_loss
-        self.reconstruction_loss = ReconLossNestedWrapper(reconstruction_loss)
-        self.contrastive_weight = contrastive_weight        
+        self.con_loss = contrastive_loss
+        self.recon_loss = ReconLossNestedWrapper(reconstruction_loss)
+        self.alpha = alpha
+        self.beta = beta      
 
     def forward(self, input, target):
         """
         The forward pass of the ConReconLoss.
         """
-        assert "con" in input and "recon" in input, "input must contain both contrastive and reconstruction data"
-        contrastive_loss = self.contrastive_loss(input["con"])
-        reconstruction_loss = self.reconstruction_loss(input["recon"], target)
-
-        return self.contrastive_weight * contrastive_loss + (1 - self.contrastive_weight) * reconstruction_loss
+        if "con" not in input and "recon" not in input:
+            raise ValueError("input must contain both contrastive and reconstruction data under 'con' and 'recon' keys.")
+        con_loss = self.con_loss(input["con"])
+        recon_loss = self.recon_loss(input["recon"], target)
+        total_loss = self.alpha * con_loss + self.beta * recon_loss
+        return {"con": con_loss, "recon": recon_loss, "total": total_loss}

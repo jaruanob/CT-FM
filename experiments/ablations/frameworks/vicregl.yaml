@@ -1,13 +1,13 @@
-CONSTANTS#FRAMEWORK: VICRegL
+vars#FRAMEWORK: VICRegL
 
 # Given an architecture, its output feature size will be equal to input patch size divided by this factor.
-CONSTANTS#DOWNSAMPLE_FACTOR_BY_BACKBONE: {"SegResNetDS": 16, "ResNet50x2": 32}
-CONSTANTS#HIGH_RES_SIZE: [128, 256, 256]
-CONSTANTS#HIGH_RES_GRID_SIZE: "$[x // @CONSTANTS#DOWNSAMPLE_FACTOR_BY_BACKBONE[@CONSTANTS#BACKBONE_NAME] for x in @CONSTANTS#HIGH_RES_SIZE]"
+vars#DOWNSAMPLE_FACTOR_BY_BACKBONE: {"SegResNetDS": 16, "ResNet50x2": 32}
+vars#HIGH_RES_SIZE: [128, 256, 256]
+vars#HIGH_RES_GRID_SIZE: "$[x // @vars#DOWNSAMPLE_FACTOR_BY_BACKBONE[@vars#BACKBONE_NAME] for x in @vars#HIGH_RES_SIZE]"
 
 system#model:
     _target_: project.models.frameworks.vicregl.VICRegL
-    num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#BACKBONE_NAME]'
+    num_ftrs: '$@vars#NUM_FTRS_BY_BACKBONE[@vars#BACKBONE_NAME]'
     backbone:
 
 
@@ -27,13 +27,13 @@ system#datasets#train#dataset#transform:
           axcodes: SPL
           lazy: True
         - _target_: monai.transforms.Spacing
-          pixdim: "%CONSTANTS#SPACING"
+          pixdim: "%vars#SPACING"
           mode: bilinear
           lazy: True
         - _target_: monai.transforms.CropForeground
           lazy: True
         - _target_: monai.transforms.SpatialPad
-          spatial_size: "%CONSTANTS#HIGH_RES_SIZE"
+          spatial_size: "%vars#HIGH_RES_SIZE"
           value: -1024
           lazy: True
         - _target_: monai.transforms.ScaleIntensityRange
@@ -48,8 +48,8 @@ system#datasets#train#dataset#transform:
               transforms:
                 # This transform produces a dict, we start using the dict transforms after it.
                 - _target_: project.transforms.vicregl.RandomResizedCropAndFlip3D
-                  roi_size: "%CONSTANTS#HIGH_RES_SIZE"
-                  grid_size: "%CONSTANTS#HIGH_RES_GRID_SIZE"
+                  roi_size: "%vars#HIGH_RES_SIZE"
+                  grid_size: "%vars#HIGH_RES_GRID_SIZE"
                 - # RandHistogramShift serves purpose similar to color jitter by modifying the intensity histogram
                   _target_: monai.transforms.RandHistogramShiftd
                   keys: image
