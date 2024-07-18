@@ -1203,6 +1203,8 @@ def get_image_label_paths(data_dir, split, percentage=100):
 def lits_get_image_label_paths(data_dir, split, test_size=0.4):
     image_paths = sorted(list(Path(data_dir).glob("volume*.nii")))
     label_paths = sorted(list(Path(data_dir).glob("segmentation*.nii")))
+
+    assert len(image_paths) == len(label_paths)
     datalist = [{"image": image, "label": label} for image, label in zip(image_paths, label_paths)]
 
     if split == "train":

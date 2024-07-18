@@ -1,9 +1,9 @@
-CONSTANTS#name: random_init_eval
+vars#name: random_init_eval
 system#model#trunk:
     _target_: monai.networks.nets.SegResNetDS
     spatial_dims: 3
-    in_channels: "%CONSTANTS#in_channels"
-    out_channels: "%CONSTANTS#out_channels"
+    in_channels: "@vars#in_channels"
+    out_channels: "@vars#out_channels"
     init_filters: 32
     blocks_down: [1, 2, 2, 4, 4]
     dsdepth: 4

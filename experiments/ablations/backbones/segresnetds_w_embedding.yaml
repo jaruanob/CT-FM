@@ -1,4 +1,4 @@
-CONSTANTS#BACKBONE_NAME: SegResNetDS
+vars#BACKBONE_NAME: SegResNetDS
 
 # This architecture is used by ConRecon.
 system#model#model#backbone: 

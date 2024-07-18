@@ -1,0 +1,10 @@
+system#postprocessing#metrics#pred:
+                - "$lambda x: x[0] if isinstance(x, (list, tuple)) else x"
+                - "$lambda x: x.cpu()"
+                - "$lambda x: torch.softmax(x, 1)"
+
+system#postprocessing#metrics#target:
+                # Remove the channel dim. Target for torchmetrics is (N, ...)
+                - "$lambda tensor: tensor.squeeze(1)"
+                - "$lambda tensor: tensor.cpu()"
+                - "$lambda tensor: tensor.long()"

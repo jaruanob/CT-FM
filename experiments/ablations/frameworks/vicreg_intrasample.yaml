@@ -1,14 +1,14 @@
-CONSTANTS#FRAMEWORK: VicReg_Intrasample
-CONSTANTS#PATCH_SIZE_MM: [64, 128, 128] # Patch size in mm 
-CONSTANTS#PATCH_SIZE_VOXELS: "$[math.ceil((@CONSTANTS#PATCH_SIZE_MM[i]//@CONSTANTS#SPACING[i])/16) * 16 for i in range(3)]"
+vars#FRAMEWORK: VicReg_Intrasample
+vars#PATCH_SIZE_MM: [64, 128, 128] # Patch size in mm 
+vars#PATCH_SIZE_VOXELS: "$[math.ceil((@vars#PATCH_SIZE_MM[i]//@vars#SPACING[i])/16) * 16 for i in range(3)]"
 _requires_: "$import math"
-CONSTANTS#NUM_CONTRASTIVE_CROPS: 12
+vars#NUM_CONTRASTIVE_CROPS: 12
 
 system#model: 
     _target_: torch.compile
     model:
       _target_: project.models.frameworks.vicreg.VICReg
-      num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#BACKBONE_NAME]'
+      num_ftrs: '$@vars#NUM_FTRS_BY_BACKBONE[@vars#BACKBONE_NAME]'
       backbone:
 
 system#criterion:
@@ -46,13 +46,13 @@ system#datasets#train#dataset#transform:
                 axcodes: SPL
                 lazy: True
               - _target_: monai.transforms.Spacing
-                pixdim: "%CONSTANTS#SPACING"
+                pixdim: "%vars#SPACING"
                 mode: bilinear
                 lazy: True
               - _target_: monai.transforms.CropForeground
                 lazy: True
               - _target_: monai.transforms.SpatialPad
-                spatial_size: "%CONSTANTS#PATCH_SIZE_VOXELS"
+                spatial_size: "%vars#PATCH_SIZE_VOXELS"
                 value: -1024
                 lazy: True
               - _target_: monai.transforms.ScaleIntensityRange
@@ -67,8 +67,8 @@ system#datasets#train#dataset#transform:
               # From this point it's not a Tensor anymore, but a list of NUM_CONTRASTIVE_CROPS Tensors
               - _target_: monai.transforms.RandSpatialCropSamplesd
                 keys: view_0
-                roi_size: "%CONSTANTS#PATCH_SIZE_VOXELS"
-                num_samples: "%CONSTANTS#NUM_CONTRASTIVE_CROPS"
+                roi_size: "%vars#PATCH_SIZE_VOXELS"
+                num_samples: "%vars#NUM_CONTRASTIVE_CROPS"
                 lazy: True
               # Duplicate the view
               - _target_: monai.transforms.CopyItemsd
@@ -78,13 +78,13 @@ system#datasets#train#dataset#transform:
                 keys: view_0
                 transform:
                     _target_: project.transforms.ssl.RandomResizedCrop
-                    size: "%CONSTANTS#PATCH_SIZE_VOXELS"
+                    size: "%vars#PATCH_SIZE_VOXELS"
                     scale: [0.33, 1.0]
               - _target_: project.transforms.ssl.DictifyTransform
                 keys: view_1
                 transform:
                     _target_: project.transforms.ssl.RandomResizedCrop
-                    size: "%CONSTANTS#PATCH_SIZE_VOXELS"
+                    size: "%vars#PATCH_SIZE_VOXELS"
                     scale: [0.33, 1.0]
               - _target_: monai.transforms.RandFlipd
                 keys: view_0

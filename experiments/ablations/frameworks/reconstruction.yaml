@@ -1,6 +1,6 @@
-CONSTANTS#FRAMEWORK: Reconstruction
-# CONSTANTS#PATCH_SIZE_MM: [64, 128, 128] # Patch size in mm 
-CONSTANTS#PATCH_SIZE_VOXELS: [64, 320, 320]
+vars#FRAMEWORK: Reconstruction
+# vars#PATCH_SIZE_MM: [64, 128, 128] # Patch size in mm 
+vars#PATCH_SIZE_VOXELS: [64, 320, 320]
 _requires_: "$import math"
 
 system#model:
@@ -26,13 +26,13 @@ system#datasets#train#dataset#transform:
           axcodes: SPL
           lazy: True
         - _target_: monai.transforms.Spacing
-          pixdim: "%CONSTANTS#SPACING"
+          pixdim: "%vars#SPACING"
           mode: bilinear
           lazy: True
         - _target_: monai.transforms.CropForeground
           lazy: True
         - _target_: monai.transforms.SpatialPad
-          spatial_size: "%CONSTANTS#PATCH_SIZE_VOXELS"
+          spatial_size: "%vars#PATCH_SIZE_VOXELS"
           value: -1024
           lazy: True
         - _target_: monai.transforms.ScaleIntensityRange
@@ -45,13 +45,13 @@ system#datasets#train#dataset#transform:
           func: '$lambda x: {"input": x, "target": x.clone()}'
         - _target_: monai.transforms.RandSpatialCropd
           keys: ["input", "target"]
-          roi_size: "%CONSTANTS#PATCH_SIZE_VOXELS"
+          roi_size: "%vars#PATCH_SIZE_VOXELS"
           lazy: True
         - _target_: monai.transforms.RandCoarseDropoutd
           keys: input
           holes: 4
-          spatial_size: "$[int(dim*0.3) for dim in @CONSTANTS#PATCH_SIZE_VOXELS]"
-          max_spatial_size: "$[int(dim*0.5) for dim in @CONSTANTS#PATCH_SIZE_VOXELS]"
+          spatial_size: "$[int(dim*0.3) for dim in @vars#PATCH_SIZE_VOXELS]"
+          max_spatial_size: "$[int(dim*0.5) for dim in @vars#PATCH_SIZE_VOXELS]"
           prob: 1
           fill_value: 0
         - _target_: monai.transforms.ToTensord

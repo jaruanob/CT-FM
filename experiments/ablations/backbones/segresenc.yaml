@@ -1,4 +1,4 @@
-CONSTANTS#BACKBONE_NAME: SegResNetDS
+vars#BACKBONE_NAME: SegResNetDS
 
 # This architecture is used by SimCLR and VicRegL.
 system#model#model#backbone:

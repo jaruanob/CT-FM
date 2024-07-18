@@ -1,5 +1,5 @@
-CONSTANTS#FRAMEWORK: SimCLR_Cross_Sample
-CONSTANTS#PATCH_SIZE_VOXELS: [64, 320, 320]
+vars#FRAMEWORK: SimCLR_Cross_Sample
+vars#PATCH_SIZE_VOXELS: [64, 320, 320]
 _requires_: "$import math"
 
 
@@ -7,7 +7,7 @@ system#model:
     _target_: torch.compile
     model:
       _target_: project.models.frameworks.simclr.SimCLR
-      num_ftrs: '$@CONSTANTS#NUM_FTRS_BY_BACKBONE[@CONSTANTS#BACKBONE_NAME]'
+      num_ftrs: '$@vars#NUM_FTRS_BY_BACKBONE[@vars#BACKBONE_NAME]'
       backbone:
 
 
@@ -32,13 +32,13 @@ system#datasets#train#dataset#transform:
                 axcodes: SPL
                 lazy: True
               - _target_: monai.transforms.Spacing
-                pixdim: "%CONSTANTS#SPACING"
+                pixdim: "%vars#SPACING"
                 mode: bilinear
                 lazy: True
               - _target_: monai.transforms.CropForeground
                 lazy: True
               - _target_: monai.transforms.SpatialPad
-                spatial_size: "%CONSTANTS#PATCH_SIZE_VOXELS"
+                spatial_size: "%vars#PATCH_SIZE_VOXELS"
                 value: -1024
                 lazy: True
               - _target_: monai.transforms.ScaleIntensityRange
@@ -48,7 +48,7 @@ system#datasets#train#dataset#transform:
                 b_max: 1
                 clip: True
               - _target_: monai.transforms.RandSpatialCrop
-                roi_size: "%CONSTANTS#PATCH_SIZE_VOXELS"
+                roi_size: "%vars#PATCH_SIZE_VOXELS"
               - _target_: monai.transforms.Lambda
                 func: '$lambda x: {"view_0": x}'
               - _target_: monai.transforms.CopyItemsd
@@ -58,13 +58,13 @@ system#datasets#train#dataset#transform:
                 keys: view_0
                 transform:
                     _target_: project.transforms.ssl.RandomResizedCrop
-                    size: "%CONSTANTS#PATCH_SIZE_VOXELS"
+                    size: "%vars#PATCH_SIZE_VOXELS"
                     scale: [0.33, 1.0]
               - _target_: project.transforms.ssl.DictifyTransform
                 keys: view_1
                 transform:
                     _target_: project.transforms.ssl.RandomResizedCrop
-                    size: "%CONSTANTS#PATCH_SIZE_VOXELS"
+                    size: "%vars#PATCH_SIZE_VOXELS"
                     scale: [0.33, 1.0]
               - _target_: monai.transforms.RandFlipd
                 keys: view_0

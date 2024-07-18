@@ -1,16 +1,16 @@
 project: .
-CONSTANTS:
-    init_LR: 0.0002
+vars:
+    init_LR: 0.001
     project: "radchest_eval"
     num_classes: 9
     intensity_range: [-1000, 200]
-    size: [96, 128, 128]
+    size: "$[96, 128, 128] if @vars#format == 'lighter' else [128, 128, 96]"
     in_channels: 1
     embedding_dim: 512
-    cache_dir: '$f"/mnt/data1/suraj/lighter_cache/radchest/{@CONSTANTS#format}"'
-    format: "$'suprem' if 'suprem' in @CONSTANTS#name else 'lighter'"
+    cache_dir: '$f"/mnt/data1/suraj/lighter_cache/radchest/{@vars#format}"'
+    format: "$'suprem' if 'suprem' in @vars#name else 'lighter'"
     # Transforms the RadChest format to either lighter format (SPL, default) or SuPREM format (RAS)
-    dataset_specific_transform: "$lambda x: torch.flip(x, [1]) if @CONSTANTS#format == 'lighter' else torch.flip(x.permute(0, 3, 2, 1), [2, 3])"
+    dataset_specific_transform: "$lambda x: torch.flip(x, [1]) if @vars#format == 'lighter' else torch.flip(x.permute(0, 3, 2, 1), [2, 3])"
     dataset_dir: "/mnt/data1/RadChestCT"
 
 trainer:
@@ -28,9 +28,9 @@ trainer:
     log_every_n_steps: 10
     logger:
         _target_: pytorch_lightning.loggers.WandbLogger
-        project: "@CONSTANTS#project"
-        name: '$f"{@CONSTANTS#name}"'
-        save_dir: '$f"/mnt/data1/CT_FM/{@CONSTANTS#project}/logs/{@CONSTANTS#name}"'
+        project: "@vars#project"
+        name: '$f"{@vars#name}"'
+        save_dir: '$f"/mnt/data1/CT_FM/{@vars#project}/logs/{@vars#name}"'
 
 system:
     _target_: lighter.LighterSystem
@@ -44,11 +44,11 @@ system:
             trunk:
                 _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
                 ckpt_path: /mnt/data1/CT_FM/IDC_SSL_CT/runs/checkpoints/CT_FM_Reconstruction_SegResNetDS/epoch=79-step=40000.ckpt
-                ckpt_to_model_prefix: '${"backbone.encoder" : ""} if "recon" in @CONSTANTS#name else {"backbone.": ""}'
+                ckpt_to_model_prefix: '${"backbone.encoder" : ""} if "recon" in @vars#name else {"backbone.": ""}'
                 model:
                     _target_: monai.networks.nets.segresnet_ds.SegResEncoder
                     spatial_dims: 3
-                    in_channels: "@CONSTANTS#in_channels"
+                    in_channels: "@vars#in_channels"
                     init_filters: 32
                     blocks_down: [1, 2, 2, 4, 4]
             head:
@@ -56,8 +56,8 @@ system:
                   output_size: 1
                 - _target_: torch.nn.Flatten
                 - _target_: torch.nn.Linear
-                  in_features: "@CONSTANTS#embedding_dim"
-                  out_features: "@CONSTANTS#num_classes"
+                  in_features: "@vars#embedding_dim"
+                  out_features: "@vars#num_classes"
             pre_func:  
                 - "$lambda x: x[-1]"
             
@@ -67,7 +67,7 @@ system:
     optimizer:
         _target_: torch.optim.AdamW
         params: "$@system#model.parameters()"
-        lr: "%CONSTANTS#init_LR"
+        lr: "%vars#init_LR"
         weight_decay: 1.0e-05 
 
     scheduler:
@@ -80,7 +80,7 @@ system:
         train:
             - _target_: torchmetrics.AUROC
               task: multilabel # Note: Change to `binary` for Task 2 and Task 3 and remove num_classes below
-              num_labels: "@CONSTANTS#num_classes"
+              num_labels: "@vars#num_classes"
 
         val: "%#train"
         test: "%#train"
@@ -90,9 +90,9 @@ system:
             _target_: monai.data.PersistentDataset
             data:
                 _target_: project.data.radchest_get_image_label_paths
-                data_dir: "%CONSTANTS#dataset_dir"
+                data_dir: "%vars#dataset_dir"
                 split: train            
-            cache_dir: '$f"{@CONSTANTS#cache_dir}/train"'
+            cache_dir: '$f"{@vars#cache_dir}/train"'
             hash_transform: "$monai.data.utils.json_hashing"
             transform: 
                 _target_: monai.transforms.Compose
@@ -109,22 +109,22 @@ system:
                       keys: ["image"]
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: ["image"]
-                      a_min: "$@CONSTANTS#intensity_range[0]"
-                      a_max: "$@CONSTANTS#intensity_range[1]"
+                      a_min: "$@vars#intensity_range[0]"
+                      a_max: "$@vars#intensity_range[1]"
                       b_min: 0
                       b_max: 1
                       clip: True
                     # Flip for the dataet 
                     - _target_: monai.transforms.Lambdad
                       keys: ["image"]
-                      func: "@CONSTANTS#dataset_specific_transform"
+                      func: "@vars#dataset_specific_transform"
                     - _target_: monai.transforms.CropForegroundd
                       source_key: "image"
                       keys: ["image"]
                       margin: 10
                     - _target_:   monai.transforms.Resized
                       keys: ["image"]
-                      spatial_size: "@CONSTANTS#size"
+                      spatial_size: "@vars#size"
                       mode: "bilinear"
                     - _target_: monai.transforms.RandAffined
                       keys: ["image"]
@@ -159,9 +159,9 @@ system:
             _target_: monai.data.PersistentDataset
             data:
                 _target_: project.data.radchest_get_image_label_paths
-                data_dir: "%CONSTANTS#dataset_dir"
+                data_dir: "%vars#dataset_dir"
                 split: val            
-            cache_dir: '$f"{@CONSTANTS#cache_dir}/val"'
+            cache_dir: '$f"{@vars#cache_dir}/val"'
             hash_transform: "$monai.data.utils.json_hashing"
             transform: 
                 _target_: monai.transforms.Compose
@@ -178,22 +178,22 @@ system:
                       keys: ["image"]
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: ["image"]
-                      a_min: "$@CONSTANTS#intensity_range[0]"
-                      a_max: "$@CONSTANTS#intensity_range[1]"
+                      a_min: "$@vars#intensity_range[0]"
+                      a_max: "$@vars#intensity_range[1]"
                       b_min: 0
                       b_max: 1
                       clip: True
                     # Flip for the dataet 
                     - _target_: monai.transforms.Lambdad
                       keys: ["image"]
-                      func: "@CONSTANTS#dataset_specific_transform"
+                      func: "@vars#dataset_specific_transform"
                     - _target_: monai.transforms.CropForegroundd
                       source_key: "image"
                       keys: ["image"]
                       margin: 10
                     - _target_:   monai.transforms.Resized
                       keys: ["image"]
-                      spatial_size: "@CONSTANTS#size"
+                      spatial_size: "@vars#size"
                       mode: "bilinear"
                     - _target_: monai.transforms.Lambda
                       func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor().to(dtype=torch.float32)}'

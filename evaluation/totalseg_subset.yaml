@@ -21,7 +21,7 @@ vars:
     wandb_tag: $f"{@#percentage}%"
     intensity_range: [-1024, 3072]
     # Wandb project 
-    project: "totalseg_eval"
+    project: "ct_fm_quick_seg_eval"
     # System specific variables
     dataset_dir: "/mnt/data1/SOTASeg/Dataset600_TotalSegmentator_all_fullres"
     cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}"'
@@ -199,7 +199,7 @@ system:
                 _target_: project.data.get_image_label_paths
                 data_dir: "@vars#dataset_dir"
                 split: val
-                percentage: 100 # 25 samples
+                percentage: 18 # 25 samples
             transform:
                 _target_: monai.transforms.Compose
                 transforms:
