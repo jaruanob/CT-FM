@@ -1,4 +1,4 @@
-vars#name: suprem_unet_eval
+vars#name: suprem_unet
 system#model:
       _target_: project.models.suprem.SuPreM_loader
       model:

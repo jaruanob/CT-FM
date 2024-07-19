@@ -1,4 +1,4 @@
-CONSTANTS:
+vars:
   imports: "$import pickle"
   version: "lr=dynamic_global_grid_size=[4,8,8]_ResNet50x2"
   HIGH_RES_SIZE: [128, 256, 256]
@@ -22,11 +22,11 @@ trainer:
   callbacks:
     - _target_: lighter.callbacks.logger.LighterLogger
       project: IDC_vicregl_pretrain
-      log_dir: $f"/mnt/data16/IDC_SSL_CT/runs/logs/IDC_vicregl_pretrain/{@CONSTANTS#version}"
+      log_dir: $f"/mnt/data16/IDC_SSL_CT/runs/logs/IDC_vicregl_pretrain/{@vars#version}"
       wandb: True
 
     - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-      dirpath: $f"/mnt/data16/IDC_SSL_CT/runs/checkpoints/IDC_vicregl_pretrain/{@CONSTANTS#version}"
+      dirpath: $f"/mnt/data16/IDC_SSL_CT/runs/checkpoints/IDC_vicregl_pretrain/{@vars#version}"
       save_last: True
       verbose: True
       every_n_epochs: 1 # 10
@@ -97,7 +97,7 @@ system:
               b_max: 1
               clip: True
             - _target_: monai.transforms.SpatialPad
-              spatial_size: "@CONSTANTS#HIGH_RES_SIZE"
+              spatial_size: "@vars#HIGH_RES_SIZE"
             - _target_: monai.transforms.ToTensor
             - _target_: project.transforms.ssl.MultiCrop
               high_resolution_transforms:
@@ -105,8 +105,8 @@ system:
                   transforms:
                     # This transform produces a dict, we start using MONAI's dict transforms after it.
                     - _target_: project.transforms.vicregl.RandomResizedCropAndFlip3D
-                      roi_size: "@CONSTANTS#HIGH_RES_SIZE"
-                      grid_size: "@CONSTANTS#HIGH_RES_GRID_SIZE"
+                      roi_size: "@vars#HIGH_RES_SIZE"
+                      grid_size: "@vars#HIGH_RES_GRID_SIZE"
                     - # RandHistogramShift serves purpose similar to color jitter by modifying the intensity histogram
                       _target_: monai.transforms.RandHistogramShiftd
                       keys: image

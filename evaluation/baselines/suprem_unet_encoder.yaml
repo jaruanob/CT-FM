@@ -1,4 +1,4 @@
-vars#name: suprem_unet_eval
+vars#name: suprem_unet
 vars#embedding_dim: 512
 vars#axcodes: "RAS"
 system#model#trunk:
