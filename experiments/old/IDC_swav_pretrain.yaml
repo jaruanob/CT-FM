@@ -1,5 +1,5 @@
 imports: "$import pathlib"
-CONSTANTS:
+vars:
   HIGH_RES_SIZE: [96, 320, 320]  # [128, 400, 400]
   LOW_RES_SIZE: [32, 64, 64]  # [32, 128, 128]
 
@@ -131,7 +131,7 @@ system:
                 transforms:
                   - _target_: project.transforms.monai_related.FilteredRandSpatialCrop # monai.transforms.RandSpatialCrop
                     allowed_empty_voxel_proportion: 0.3
-                    roi_size: "@CONSTANTS#HIGH_RES_SIZE"
+                    roi_size: "@vars#HIGH_RES_SIZE"
                     random_size: False
                   - _target_: monai.transforms.RandFlip
                     prob: 0.25
@@ -143,7 +143,7 @@ system:
                     _target_: monai.transforms.RandGaussianSmooth
                     prob: 0.5
                   - _target_: monai.transforms.SpatialPad
-                    spatial_size: "@CONSTANTS#HIGH_RES_SIZE"
+                    spatial_size: "@vars#HIGH_RES_SIZE"
                   - _target_: monai.transforms.ToTensor
                     track_meta: False
               - "%#0"
@@ -152,7 +152,7 @@ system:
                 transforms:
                   - _target_: project.transforms.monai_related.FilteredRandSpatialCrop # monai.transforms.RandSpatialCrop
                     allowed_empty_voxel_proportion: 0.3
-                    roi_size: "@CONSTANTS#LOW_RES_SIZE"
+                    roi_size: "@vars#LOW_RES_SIZE"
                     random_size: False
                   - _target_: monai.transforms.RandFlip
                     prob: 0.25
@@ -164,7 +164,7 @@ system:
                     _target_: monai.transforms.RandGaussianSmooth
                     prob: 0.5
                   - _target_: monai.transforms.SpatialPad
-                    spatial_size: "@CONSTANTS#LOW_RES_SIZE"
+                    spatial_size: "@vars#LOW_RES_SIZE"
                   - _target_: monai.transforms.ToTensor
                     track_meta: False
               - "%#0"

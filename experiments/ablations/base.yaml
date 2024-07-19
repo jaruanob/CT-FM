@@ -1,4 +1,4 @@
-CONSTANTS:
+vars:
     NUM_FTRS_BY_BACKBONE: {"SegResNetDS": 512, "ResNet50x2": 4096}
     SPACING: [3, 1, 1]
 
@@ -18,7 +18,7 @@ trainer:
     log_every_n_steps: 100
     logger: 
         _target_: pytorch_lightning.loggers.WandbLogger
-        name: $f"CT_FM_{@CONSTANTS#FRAMEWORK}_{@CONSTANTS#BACKBONE_NAME}"
+        name: $f"CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
         project: CT_FM
         save_dir: $f"/mnt/data1/CT_FM/technical_ablation/runs/logs/CT_FM_{@CONSTANTS#FRAMEWORK}_{@CONSTANTS#BACKBONE_NAME}"
   
