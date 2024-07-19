@@ -1,27 +1,20 @@
-vars#FRAMEWORK: ConRecon
+vars#FRAMEWORK: SimCLR
 vars#PATCH_SIZE_MM: [64, 128, 128] # Patch size in mm 
 vars#PATCH_SIZE_VOXELS: "$[math.ceil((@vars#PATCH_SIZE_MM[i]//@vars#SPACING[i])/16) * 16 for i in range(3)]"
 _requires_: "$import math"
-vars#NUM_CONTRASTIVE_CROPS: 8
+vars#NUM_CONTRASTIVE_CROPS: 20 # 8
 
-system#model: 
-    _target_: torch.compile
-    model:
-      _target_: project.models.frameworks.conrecon.ConRecon
-      num_ftrs: '$@vars#NUM_FTRS_BY_BACKBONE[@vars#BACKBONE_NAME]'
-      backbone:
+
+system#model:
+    _target_: project.models.frameworks.simclr.SimCLR
+    num_ftrs: '$@vars#NUM_FTRS_BY_BACKBONE[@vars#BACKBONE_NAME]'
+    backbone:
+
 
 system#criterion:
-    _target_: project.loss.conrecon_loss.ConReconLoss
-    contrastive_loss:
-      _target_: project.loss.intrasample_ntxent_loss.IntraSampleNTXEntLoss
-      temperature: 0.1
-    reconstruction_loss:
-      _target_: monai.losses.DeepSupervisionLoss
-      loss:
-          _target_: torch.nn.MSELoss
-    alpha: 1
-    beta: 10
+    _target_: project.loss.intrasample_ntxent_loss.IntraSampleNTXEntLoss
+    temperature: 0.1
+
 
 system#datasets#train#dataset#transform:
     # Parent torchvision Compose so that the monai Compose children can have different map_items.
@@ -103,34 +96,15 @@ system#datasets#train#dataset#transform:
               - _target_: monai.transforms.RandGaussianSmoothd
                 keys: view_1
                 prob: 0.5
-              - _target_: monai.transforms.CopyItemsd
-                keys: ["view_0", "view_1"]
-                names: ["masked_view_0", "masked_view_1"]
-              - _target_: monai.transforms.RandCoarseDropoutd
-                keys: masked_view_0
-                holes: 4
-                spatial_size: "$[int(dim*0.3) for dim in @vars#PATCH_SIZE_VOXELS]"
-                max_spatial_size: "$[int(dim*0.5) for dim in @vars#PATCH_SIZE_VOXELS]"
-                prob: 1
-                fill_value: 0
-              - _target_: monai.transforms.RandCoarseDropoutd
-                keys: masked_view_1
-                holes: 4
-                spatial_size: "$[int(dim*0.3) for dim in @vars#PATCH_SIZE_VOXELS]"
-                max_spatial_size: "$[int(dim*0.5) for dim in @vars#PATCH_SIZE_VOXELS]"
-                prob: 1
-                fill_value: 0
               - _target_: monai.transforms.ToTensord
-                keys: ["masked_view_0", "masked_view_1", "view_0", "view_1"]
+                keys: ["view_0", "view_1"]
                 track_meta: False
-              # The masked views will be given as input and the non-masked views as target
               - _target_: monai.transforms.Lambda
-                func: '$lambda x: {"masked":(x["masked_view_0"], x["masked_view_1"]), "non_masked": (x["view_0"], x["view_1"])}'
+                func: '$lambda x: (x["view_0"], x["view_1"])'
 
-        # Disable map_items so that the whole list of NUM_CONTRASTIVE_CROPS Tensors is wrapped into input and target instead of its elements
+        # Disable map_items so that the whole list of NUM_CONTRASTIVE_CROPS Tensors is wrapped into input instead of its elements
         - _target_: monai.transforms.Compose
           map_items: False
           transforms:
               - _target_: monai.transforms.Lambda
-                func: '$lambda x: {"input": [elem["masked"] for elem in x], "target": [elem["non_masked"] for elem in x]}'
-
+                func: '$lambda x: {"input": x}'

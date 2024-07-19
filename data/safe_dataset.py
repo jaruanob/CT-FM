@@ -4,6 +4,8 @@ import torch
 from torch.utils.data import Dataset
 from loguru import logger
 
+from lighter.utils.misc import apply_fns
+
 
 class SafeDataset(Dataset):
     """
@@ -16,9 +18,10 @@ class SafeDataset(Dataset):
         disable (bool): If True, disables the wrapper's try-except.
     """
 
-    def __init__(self, dataset: Dataset, disable: bool = False):
+    def __init__(self, dataset: Dataset, disable: bool = False, check_fns=None):
         self.dataset = dataset
         self.disable = disable
+        self.check_fns = check_fns
 
     def __len__(self):
         return len(self.dataset)
@@ -35,9 +38,14 @@ class SafeDataset(Dataset):
             Any: The item from the wrapped dataset at the given index, or None if an exception occurs.
         """
         if self.disable:
-            return self.dataset[index]
+            item = self.dataset[index]
         try:
-            return self.dataset[index]
+            item = self.dataset[index]
         except Exception as e:
             logger.error(f"Error at index {index}, skipping it. \nException: {e}\n{traceback.format_exc()}")
             return None
+        
+        if self.check_fns is not None:
+            item = apply_fns(item, self.check_fns)
+
+        return item
