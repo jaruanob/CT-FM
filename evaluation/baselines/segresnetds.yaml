@@ -1,4 +1,3 @@
-vars#name: random_init
 system#model#trunk:
     _target_: monai.networks.nets.SegResNetDS
     spatial_dims: 3

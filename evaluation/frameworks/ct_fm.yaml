@@ -1,2 +1,0 @@
-vars#name: ct_fm
-system#model#trunk#ckpt_path: /mnt/data1/CT_FM/latest_fm/ct_fm_simclr_segresnetds_17_jul_2024.ckpt

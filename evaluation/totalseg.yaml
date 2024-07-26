@@ -20,10 +20,8 @@ vars:
     group: "all" # Options are "all", "organ", "cardiac", "vertebrae", "ribs", "muscles"
     wandb_tag: $f"{@#percentage}%"
     intensity_range: [-1024, 3072]
-    # Wandb project 
-    project: "totalseg_eval"
     # System specific variables
-    dataset_dir: "/mnt/data1/SOTASeg/Dataset600_TotalSegmentator_all_fullres"
+    dataset_dir: "/mnt/data1/TotalSegmentator/v1/processed"
     cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}"'
     format: "$'suprem' if 'suprem' in @vars#name else 'lighter'"
 
@@ -35,7 +33,7 @@ trainer:
     accelerator: gpu
     # ---------
     devices: 4
-    strategy: ddp_find_unused_parameters_true
+    strategy: ddp
     sync_batchnorm: True
     # ---------
     precision: 16-mixed
@@ -126,7 +124,7 @@ system:
             cache_dir: '$f"{@vars#cache_dir}/train"'
             hash_transform: "$monai.data.utils.json_hashing"
             data:
-                _target_: project.data.get_image_label_paths
+                _target_: project.data.get_ts_datalist
                 data_dir: "@vars#dataset_dir"
                 split: train
                 percentage: "@vars#percentage"
@@ -142,6 +140,17 @@ system:
                     - _target_: monai.transforms.Orientationd
                       keys: ["image", "label"]
                       axcodes: "@vars#axcodes"
+                    - _target_: monai.transforms.LabelFilterd
+                      keys: label
+                      applied_labels: 
+                        _target_: project.data.get_ts_class_indices
+                        group: "@vars#group"
+                    - _target_: monai.transforms.MapLabelValued
+                      keys: label
+                      orig_labels: 
+                        _target_: project.data.get_ts_class_indices
+                        group: "@vars#group"
+                      target_labels: "$list(range(@vars#out_channels))"
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@vars#intensity_range[0]"
@@ -196,7 +205,7 @@ system:
             cache_dir: '$f"{@vars#cache_dir}/val"'
             hash_transform: "$monai.data.utils.json_hashing"
             data:
-                _target_: project.data.get_image_label_paths
+                _target_: project.data.get_ts_datalist
                 data_dir: "@vars#dataset_dir"
                 split: val
                 percentage: 100 # 25 samples
@@ -217,6 +226,12 @@ system:
                       applied_labels: 
                         _target_: project.data.get_ts_class_indices
                         group: "@vars#group"
+                    - _target_: monai.transforms.MapLabelValued
+                      keys: label
+                      orig_labels: 
+                        _target_: project.data.get_ts_class_indices
+                        group: "@vars#group"
+                      target_labels: "$list(range(@vars#out_channels))"
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@vars#intensity_range[0]"
@@ -238,10 +253,8 @@ system:
 
         test:
             _target_: monai.data.Dataset
-            # cache_dir: '$f"{@vars#cache_dir}/val"'
-            # hash_transform: "$monai.data.utils.json_hashing"
             data:
-                _target_: project.data.get_image_label_paths
+                _target_: project.data.get_ts_datalist
                 data_dir: "@vars#dataset_dir"
                 split: test
                 percentage: 100 # 25 samples
@@ -262,6 +275,12 @@ system:
                       applied_labels: 
                         _target_: project.data.get_ts_class_indices
                         group: "@vars#group"
+                    - _target_: monai.transforms.MapLabelValued
+                      keys: label
+                      orig_labels: 
+                        _target_: project.data.get_ts_class_indices
+                        group: "@vars#group"
+                      target_labels: "$list(range(@vars#out_channels))"
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@vars#intensity_range[0]"

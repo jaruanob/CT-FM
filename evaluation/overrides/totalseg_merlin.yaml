@@ -1,0 +1,8 @@
+vars#out_channels: 21
+vars#group: "merlin" # Options are "all", "organ", "cardiac", "vertebrae", "ribs", "muscles"
+vars#dataset_dir: "/mnt/data1/TotalSegmentator/v2/processed"
+vars#filter_fn: '$lambda x: x[x["study_type"].isin(["ct pelvis", "ct abdomen-pelvis", "ct abdomen", "ct thorax", "ct thorax-abdomen", "ct thorax-abdomen-pelvis"])]'
+system#datasets#train#data#filter_fn: "@vars#filter_fn"
+system#datasets#val#data#filter_fn: "@vars#filter_fn"
+system#datasets#test#data#filter_fn: "@vars#filter_fn"
+trainer#callbacks#0#until_epoch: 0

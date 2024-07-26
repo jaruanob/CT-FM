@@ -1,4 +1,3 @@
-vars#name: random_init_mednext_default
 system#model#trunk:
     _target_: nnunet_mednext.create_mednext_v1
     num_input_channels: "%vars#in_channels"

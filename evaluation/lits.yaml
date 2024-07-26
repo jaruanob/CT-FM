@@ -14,7 +14,6 @@ vars:
     # Percentage of the dataset to use
     intensity_range: [-17, 200] # Based on nnuNET
     # Wandb project 
-    project: "lits_eval"
     dataset_dir: "/mnt/ssd1/suraj/LITS/LITS17"
     cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}"'
     format: "$'suprem' if 'suprem' in @vars#name else 'lighter'"
@@ -109,7 +108,7 @@ system:
             hash_transform: "$monai.data.utils.json_hashing"
             cache_dir: '$f"{@vars#cache_dir}/train"'
             data:
-                _target_: project.data.lits_get_image_label_paths
+                _target_: project.data.get_lits_datalist
                 data_dir: "%vars#dataset_dir"
                 split: train
             transform:
@@ -195,7 +194,7 @@ system:
             hash_transform: "$monai.data.utils.json_hashing"
             cache_dir: '$f"{@vars#cache_dir}/val"'
             data:
-                _target_: project.data.lits_get_image_label_paths
+                _target_: project.data.get_lits_datalist
                 data_dir: "%vars#dataset_dir"
                 split: val
             transform:

@@ -1,0 +1,3 @@
+vars#out_channels: 118
+vars#group: "v2" # Options are "all", "organ", "cardiac", "vertebrae", "ribs", "muscles"
+vars#dataset_dir: "/mnt/data1/TotalSegmentator/v2/processed"

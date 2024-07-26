@@ -1,4 +1,3 @@
-vars#name: suprem_segresnet_eval
 vars#embedding_dim: 128
 vars#axcodes: "RAS"
 system#model#trunk:

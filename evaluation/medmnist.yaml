@@ -8,7 +8,6 @@ _requires_:
 
 vars:
     init_LR: 0.001
-    project: "ct_fm_quick_class_eval"
     in_channels: 1
     embedding_dim: 512
     format: "$'suprem' if 'suprem' in @vars#name else 'lighter'"
