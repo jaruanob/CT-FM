@@ -14,14 +14,17 @@ vars:
     val_max_patch_size: "$[100, 384, 384] if @vars#format == 'lighter' else [384, 384, 100]"
     axcodes: "$'SPL' if @vars#format == 'lighter' else 'RAS'"
     in_channels: 1
-    out_channels: 105
+    out_channels: "$len(@vars#class_indices)"
+    class_indices:
+      _target_: project.data.get_ts_class_indices
+      group: "@vars#group"
     # Percentage of the dataset to use
     percentage: 100
-    group: "all" # Options are "all", "organ", "cardiac", "vertebrae", "ribs", "muscles"
+    group: "v1" # Options are "v1", "organ", "cardiac", "vertebrae", "ribs", "muscles"
     wandb_tag: $f"{@#percentage}%"
     intensity_range: [-1024, 3072]
     # System specific variables
-    dataset_dir: "/mnt/data1/TotalSegmentator/v1/processed"
+    dataset_dir: "/mnt/data1/TotalSegmentator/v2/processed"
     cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}"'
     format: "$'suprem' if 'suprem' in @vars#name else 'lighter'"
 
@@ -41,8 +44,8 @@ trainer:
     logger:
         _target_: pytorch_lightning.loggers.WandbLogger
         project: "@vars#project"
-        name: '$f"{@vars#name}_{@vars#percentage}%"'
-        save_dir: '$f"/mnt/data1/CT_FM/{@vars#project}/logs/{@vars#name}_{@vars#percentage}"'
+        name: '$f"{@vars#name}"'
+        save_dir: '$f"/mnt/data1/CT_FM/{@vars#project}/logs/{@vars#name}"'
         tags: "@vars#wandb_tag"
 
     callbacks:
@@ -50,7 +53,7 @@ trainer:
           name_starts_with: ["trunk.encoder"]
 
         - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-          dirpath: $f"/mnt/data1/CT_FM/{@vars#project}/totalseg/checkpoints/CT_FM_{@vars#name}"
+          dirpath: '$f"/mnt/data1/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#name}_" + "_".join(@vars#wandb_tag)'
           save_last: False
           monitor: "val/metrics/Dice/epoch"
           mode: "max"
@@ -67,7 +70,7 @@ system:
         _target_: project.models.wrapper.TrunkHeadWrapper
         trunk:
           _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
-          ckpt_path: /mnt/data1/CT_FM/IDC_SSL_CT/runs/checkpoints/CT_FM_Reconstruction_SegResNetDS/epoch=79-step=40000.ckpt
+          ckpt_path: 
           # ckpt_to_model_prefix: '${"_orig_mod.backbone.encoder" : "encoder"} if "recon" in @vars#name else {"_orig_mod.backbone.": "encoder"}'
           ckpt_to_model_prefix: '${"backbone.encoder" : "encoder"} if "recon" in @vars#name else {"backbone.": "encoder"}'
           model:
@@ -120,13 +123,14 @@ system:
 
     datasets:
         train:
-            _target_: monai.data.PersistentDataset
-            cache_dir: '$f"{@vars#cache_dir}/train"'
-            hash_transform: "$monai.data.utils.json_hashing"
+            _target_: monai.data.Dataset
+            # cache_dir: '$f"{@vars#cache_dir}/train"'
+            # hash_transform: "$monai.data.utils.json_hashing"
             data:
                 _target_: project.data.get_ts_datalist
                 data_dir: "@vars#dataset_dir"
-                split: train
+                filter_fn: 
+                    - "$lambda x: x[x['split'] == 'train']"
                 percentage: "@vars#percentage"
             transform:
                 _target_: monai.transforms.Compose
@@ -147,9 +151,7 @@ system:
                         group: "@vars#group"
                     - _target_: monai.transforms.MapLabelValued
                       keys: label
-                      orig_labels: 
-                        _target_: project.data.get_ts_class_indices
-                        group: "@vars#group"
+                      orig_labels: "@vars#class_indices"
                       target_labels: "$list(range(@vars#out_channels))"
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
@@ -201,14 +203,15 @@ system:
                       track_meta: False
     
         val:
-            _target_: monai.data.PersistentDataset
-            cache_dir: '$f"{@vars#cache_dir}/val"'
-            hash_transform: "$monai.data.utils.json_hashing"
+            _target_: monai.data.Dataset
+            # cache_dir: '$f"{@vars#cache_dir}/val"'
+            # hash_transform: "$monai.data.utils.json_hashing"
             data:
                 _target_: project.data.get_ts_datalist
                 data_dir: "@vars#dataset_dir"
-                split: val
-                percentage: 100 # 25 samples
+                filter_fn: 
+                    - "$lambda x: x[x['split'] == 'val']"
+                percentage: "@vars#percentage" # 25 samples
             transform:
                 _target_: monai.transforms.Compose
                 transforms:
@@ -228,9 +231,7 @@ system:
                         group: "@vars#group"
                     - _target_: monai.transforms.MapLabelValued
                       keys: label
-                      orig_labels: 
-                        _target_: project.data.get_ts_class_indices
-                        group: "@vars#group"
+                      orig_labels: "@vars#class_indices"
                       target_labels: "$list(range(@vars#out_channels))"
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
@@ -256,7 +257,8 @@ system:
             data:
                 _target_: project.data.get_ts_datalist
                 data_dir: "@vars#dataset_dir"
-                split: test
+                filter_fn: 
+                    - "$lambda x: x[x['split'] == 'test']"
                 percentage: 100 # 25 samples
             transform:
                 _target_: monai.transforms.Compose
@@ -277,9 +279,7 @@ system:
                         group: "@vars#group"
                     - _target_: monai.transforms.MapLabelValued
                       keys: label
-                      orig_labels: 
-                        _target_: project.data.get_ts_class_indices
-                        group: "@vars#group"
+                      orig_labels: "@vars#class_indices"
                       target_labels: "$list(range(@vars#out_channels))"
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
