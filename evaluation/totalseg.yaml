@@ -8,6 +8,7 @@ args:
     ckpt_path: $f"{@trainer#callbacks#1#dirpath}/best.ckpt"
   test: "%#validate"
 
+
 vars:
     init_LR: 0.0002
     patch_size: "$[96, 160, 160] if @vars#format == 'lighter' else [160, 160, 96]"
@@ -24,9 +25,10 @@ vars:
     wandb_tag: $f"{@#percentage}%"
     intensity_range: [-1024, 3072]
     # System specific variables
-    dataset_dir: "/mnt/data1/TotalSegmentator/v2/processed"
-    cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}"'
+    dataset_dir: "/mnt/data1/TotalSegmentator/v1/processed"
+    cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}/{@vars#group}_{@vars#name}"'
     format: "$'suprem' if 'suprem' in @vars#name else 'lighter'"
+    save_dir: '$f"/mnt/data1/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#name}_" + "_".join(@vars#wandb_tag)'
 
 trainer:
     _target_: pytorch_lightning.Trainer
@@ -44,8 +46,8 @@ trainer:
     logger:
         _target_: pytorch_lightning.loggers.WandbLogger
         project: "@vars#project"
-        name: '$f"{@vars#name}"'
-        save_dir: '$f"/mnt/data1/CT_FM/{@vars#project}/logs/{@vars#name}"'
+        name: "@vars#name"
+        save_dir:  "$@vars#save_dir.replace('checkpoints', 'logs')"
         tags: "@vars#wandb_tag"
 
     callbacks:
@@ -53,7 +55,7 @@ trainer:
           name_starts_with: ["trunk.encoder"]
 
         - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-          dirpath: '$f"/mnt/data1/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#name}_" + "_".join(@vars#wandb_tag)'
+          dirpath: "@vars#save_dir"
           save_last: False
           monitor: "val/metrics/Dice/epoch"
           mode: "max"
@@ -123,9 +125,9 @@ system:
 
     datasets:
         train:
-            _target_: monai.data.Dataset
-            # cache_dir: '$f"{@vars#cache_dir}/train"'
-            # hash_transform: "$monai.data.utils.json_hashing"
+            _target_: monai.data.PersistentDataset
+            cache_dir: '$f"{@vars#cache_dir}/train"'
+            hash_transform: "$monai.data.utils.json_hashing"
             data:
                 _target_: project.data.get_ts_datalist
                 data_dir: "@vars#dataset_dir"
@@ -199,13 +201,13 @@ system:
                       std: 0.1
                       prob: 0.2
                     - _target_: monai.transforms.Lambda
-                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor()}'
+                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor(), "id": x["id"]}'
                       track_meta: False
     
         val:
-            _target_: monai.data.Dataset
-            # cache_dir: '$f"{@vars#cache_dir}/val"'
-            # hash_transform: "$monai.data.utils.json_hashing"
+            _target_: monai.data.PersistentDataset
+            cache_dir: '$f"{@vars#cache_dir}/val"'
+            hash_transform: "$monai.data.utils.json_hashing"
             data:
                 _target_: project.data.get_ts_datalist
                 data_dir: "@vars#dataset_dir"
@@ -249,7 +251,7 @@ system:
                       roi_size: "@vars#val_max_patch_size"
                       random_size: False
                     - _target_: monai.transforms.Lambda
-                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor()}'
+                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor(), "id": x["id"]}'
                       track_meta: False
 
         test:
@@ -293,7 +295,7 @@ system:
                       source_key: image
                       margin: 10
                     - _target_: monai.transforms.Lambda
-                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor()}'
+                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor(), "id": x["id"]}'
                       track_meta: False
 
         predict: "%#test"

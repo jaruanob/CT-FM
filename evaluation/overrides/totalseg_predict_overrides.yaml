@@ -1,0 +1,19 @@
+system#postprocessing#logging#pred:
+                - _target_: project.transforms.batchapply.BatchApply
+                  transforms: 
+                    - _target_: monai.transforms.Activations
+                      softmax: True
+                    - _target_: monai.transforms.AsDiscrete
+                      argmax: True
+                      dtype: "$torch.int32"
+                    - "$lambda x: {'image': x}"
+                    - _target_: monai.transforms.Invertd
+                      keys: image
+                      orig_keys: label
+                      transform: "@system#datasets#predict#transform"
+                    - "$lambda x: x['image']"
+
+trainer#callbacks:
+      - _target_: lighter.callbacks.writer.file.LighterFileWriter
+        path : "$@vars#save_dir.replace('checkpoints', 'predictions')"
+        writer: itk_nifti
