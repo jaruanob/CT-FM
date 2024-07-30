@@ -6,12 +6,12 @@ system#postprocessing#logging#pred:
                     - _target_: monai.transforms.AsDiscrete
                       argmax: True
                       dtype: "$torch.int32"
-                    - "$lambda x: {'image': x}"
+                    - "$lambda x: {'target': x}"
                     - _target_: monai.transforms.Invertd
-                      keys: image
-                      orig_keys: label
+                      keys: target
+                      orig_keys: target
                       transform: "@system#datasets#predict#transform"
-                    - "$lambda x: x['image']"
+                    - "$lambda x: x['target']"
 
 trainer#callbacks:
       - _target_: lighter.callbacks.writer.file.LighterFileWriter

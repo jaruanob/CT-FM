@@ -16,7 +16,8 @@ def get_ts_class_indices(group="v1"):
     }
 
     assert group in body_parts_ids.keys()
-    return body_parts_ids[group] + [0]
+    class_indices = sorted([0] + body_parts_ids[group])
+    return class_indices
 
 def get_ts_datalist(data_dir, percentage=100, filter_fn=[]):
     """

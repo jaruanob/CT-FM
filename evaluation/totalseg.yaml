@@ -5,8 +5,9 @@ _requires_:
 
 args:
   validate:
-    ckpt_path: $f"{@trainer#callbacks#1#dirpath}/best.ckpt"
+    ckpt_path: $f"{@vars#save_dir}/best.ckpt"
   test: "%#validate"
+  predict: "%#validate"
 
 
 vars:
@@ -148,13 +149,11 @@ system:
                       axcodes: "@vars#axcodes"
                     - _target_: monai.transforms.LabelFilterd
                       keys: label
-                      applied_labels: 
-                        _target_: project.data.get_ts_class_indices
-                        group: "@vars#group"
+                      applied_labels: "@vars#class_indices"
                     - _target_: monai.transforms.MapLabelValued
                       keys: label
                       orig_labels: "@vars#class_indices"
-                      target_labels: "$list(range(@vars#out_channels))"
+                      target_labels: "$list(range(0, @vars#out_channels))"
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@vars#intensity_range[0]"
@@ -176,6 +175,7 @@ system:
                       random_size: False                      
                     - _target_: monai.transforms.RandAffined
                       keys: ["image", "label"]
+                      mode: ["bilinear", "nearest"]
                       prob: 0.2
                       rotate_range: [0.26, 0.26, 0.26]
                       scale_range: [0.2, 0.2, 0.2]
@@ -228,13 +228,11 @@ system:
                       axcodes: "@vars#axcodes"
                     - _target_: monai.transforms.LabelFilterd
                       keys: label
-                      applied_labels: 
-                        _target_: project.data.get_ts_class_indices
-                        group: "@vars#group"
+                      applied_labels: "@vars#class_indices"
                     - _target_: monai.transforms.MapLabelValued
                       keys: label
                       orig_labels: "@vars#class_indices"
-                      target_labels: "$list(range(@vars#out_channels))"
+                      target_labels: "$list(range(0, @vars#out_channels))"
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@vars#intensity_range[0]"
@@ -276,13 +274,11 @@ system:
                       axcodes: "@vars#axcodes"
                     - _target_: monai.transforms.LabelFilterd
                       keys: label
-                      applied_labels: 
-                        _target_: project.data.get_ts_class_indices
-                        group: "@vars#group"
+                      applied_labels: "@vars#class_indices"
                     - _target_: monai.transforms.MapLabelValued
                       keys: label
                       orig_labels: "@vars#class_indices"
-                      target_labels: "$list(range(@vars#out_channels))"
+                      target_labels: "$list(range(0, @vars#out_channels))"
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@vars#intensity_range[0]"
@@ -295,8 +291,7 @@ system:
                       source_key: image
                       margin: 10
                     - _target_: monai.transforms.Lambda
-                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor(), "id": x["id"]}'
-                      track_meta: False
+                      func: '$lambda x: {"input": x["image"], "target": x["label"], "id": x["id"]}'
 
         predict: "%#test"
 
