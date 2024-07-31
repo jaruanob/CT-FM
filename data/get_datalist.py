@@ -1,23 +1,27 @@
 from pathlib import Path
 import pandas as pd
 from lighter.utils.misc import apply_fns
+from totalsegmentator.map_to_binary import class_map
 
+BODY_PART_IDS = {
+    "organs_v1": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+    "vertebrae_v1": [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41],
+    "cardiac_v1": [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 104, 93],
+    "muscles_v1": [82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103],
+    "ribs_v1": [58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81],
+    "merlin_v2": [6, 5, 4, 3, 2, 1, 22, 32, 31, 30, 29, 28, 27, 26, 25, 21, 20, 19, 18, 7],
+    "v1": list(range(1, 105)),
+    "v2": list(range(1, 118))
+}
 
 def get_ts_class_indices(group="v1"):
-    body_parts_ids = {
-        "organs_v1": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
-        "vertebrae_v1": [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41],
-        "cardiac_v1": [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 104, 93],
-        "muscles_v1": [82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103],
-        "ribs_v1": [58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81],
-        "merlin": [6, 5, 4, 3, 2, 1, 22, 32, 31, 30, 29, 28, 27, 26, 25, 21, 20, 19, 18, 7],
-        "v1": list(range(1, 105)),
-        "v2": list(range(1, 118))
-    }
-
-    assert group in body_parts_ids.keys()
-    class_indices = sorted([0] + body_parts_ids[group])
+    assert group in BODY_PART_IDS.keys()
+    class_indices = sorted([0] + BODY_PART_IDS[group])
     return class_indices
+
+def get_ts_class_labels(class_indices, group="v1"):
+    mapping_dict = class_map["total_v1" if "v1" in group else "total"]
+    return ["background" if idx == 0 else mapping_dict[idx] for idx in class_indices]
 
 def get_ts_datalist(data_dir, percentage=100, filter_fn=[]):
     """
