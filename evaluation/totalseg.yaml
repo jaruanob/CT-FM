@@ -13,7 +13,7 @@ args:
 vars:
     init_LR: 0.0002
     patch_size: "$[96, 160, 160] if @vars#format == 'lighter' else [160, 160, 96]"
-    val_max_patch_size: "$[100, 384, 384] if @vars#format == 'lighter' else [384, 384, 100]"
+    val_max_patch_size: "$[256, 256, 256] if @vars#format == 'lighter' else [256, 256, 256]"
     axcodes: "$'SPL' if @vars#format == 'lighter' else 'RAS'"
     in_channels: 1
     out_channels: "$len(@vars#class_indices)"
@@ -26,11 +26,11 @@ vars:
       group: "@vars#group"
     # Percentage of the dataset to use
     percentage: 100
-    group: "v1" # Options are "v1", "organ", "cardiac", "vertebrae", "ribs", "muscles"
+    group: "v2" # Options are "v1", "organ", "cardiac", "vertebrae", "ribs", "muscles"
     wandb_tag: $f"{@#percentage}%"
     intensity_range: [-1024, 3072]
     # System specific variables
-    dataset_dir: "/mnt/data1/TotalSegmentator/v1/processed"
+    dataset_dir: "/mnt/data1/TotalSegmentator/v2/processed"
     cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}/{@vars#group}_{@vars#name}"'
     format: "$'suprem' if 'suprem' in @vars#name else 'lighter'"
     save_dir: '$f"/mnt/data1/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#name}_" + "_".join(@vars#wandb_tag)'
@@ -38,7 +38,7 @@ vars:
 trainer:
     _target_: pytorch_lightning.Trainer
     benchmark: True
-    max_epochs: 1000
+    max_epochs: 200
     check_val_every_n_epoch: 1
     accelerator: gpu
     # ---------
@@ -131,14 +131,7 @@ system:
               include_background: False
               per_class: False
               weight_type: "uniform"
-
         val: "%#train"
-        # test: 
-        #   Dice: $@#_requires_.to('cpu')
-        #   _requires_:
-        #       _target_: torchmetrics.Dice
-        #       num_classes: "@vars#out_channels"
-        #       ignore_index: 0
 
     datasets:
         train:
@@ -238,7 +231,7 @@ system:
                 data_dir: "@vars#dataset_dir"
                 filter_fn: 
                     - "$lambda x: x[x['split'] == 'val']"
-                percentage: "@vars#percentage" # 25 samples
+                percentage: "@vars#percentage" 
             transform:
                 _target_: monai.transforms.Compose
                 transforms:
@@ -277,14 +270,14 @@ system:
                       func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor(), "id": x["id"]}'
                       track_meta: False
 
-        test:
+        predict:
             _target_: monai.data.Dataset
             data:
                 _target_: project.data.get_ts_datalist
                 data_dir: "@vars#dataset_dir"
                 filter_fn: 
                     - "$lambda x: x[x['split'] == 'test']"
-                percentage: 100 # 25 samples
+                percentage: 100
             transform:
                 _target_: monai.transforms.Compose
                 transforms:
@@ -318,8 +311,6 @@ system:
                     - _target_: monai.transforms.Lambda
                       func: '$lambda x: {"input": x["image"], "target": x["label"], "id": x["id"]}'
 
-        predict: "%#test"
-
     postprocessing:
         metrics:
             pred: # Pred for torchmetrics is (N, C, ...)
@@ -341,10 +332,8 @@ system:
         logging:              
             pred:
                 - "$lambda x: x.argmax(dim=1, keepdim=True)"
-                - "$lambda x: x.float()"
             target:
-                - "$lambda x: x.unsqueeze(1)"
-                - "$lambda x: x.float()"
+                - "$lambda x: x.argmax(dim=1, keepdim=True)"
 
     inferer:
         _target_: monai.inferers.SlidingWindowInferer
