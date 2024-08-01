@@ -1,17 +1,10 @@
-from typing import Any, Callable, Dict, Union
-
-import gc
-from abc import ABC, abstractmethod
-from datetime import datetime
-from pathlib import Path
-
+from typing import Any, Dict
 
 import torch
-from loguru import logger
 from pytorch_lightning import Callback, Trainer
-
 import wandb
 from lighter import LighterSystem
+from monai.visualize import blend_images
 
 class WandbImageLogger(Callback):
     def on_validation_batch_end(
@@ -19,23 +12,32 @@ class WandbImageLogger(Callback):
     ):
         """Called when the validation batch ends."""
         if batch_idx == 0:
-            x = batch["input"].squeeze()
-            y = batch["target"].squeeze()
-            y_pred = outputs["pred"].squeeze()
+            x = outputs["input"].detach().cpu()
+            y = outputs["target"].detach().cpu()
+            y_pred = outputs["pred"].detach().cpu()
 
             assert x.shape == y.shape == y_pred.shape
 
-            data = []
-            for x_slice, y_slice, y_pred_slice in zip(x, y, y_pred):
-                x_slice = x_slice.cpu().numpy()
-                y_slice = y_slice.cpu().numpy()
-                y_pred_slice = y_pred_slice.cpu().numpy()
+            # Create overlay images for predictions and ground truth
+            pred_overlay = blend_images(image=x, label=y_pred, alpha=0.3, cmap="hsv").squeeze()
+            gt_overlay = blend_images(image=x, label=y, alpha=0.3, cmap="hsv").squeeze()
 
-                image = wandb.Image(x_slice, masks={
-                    "predictions": {"mask_data": y_pred_slice},
-                    "ground_truth": {"mask_data": y_slice},
-                })
+            views = ["axial", "coronal", "sagittal"]
+            indices = [pred_overlay.shape[1] // 2, pred_overlay.shape[2] // 2, pred_overlay.shape[3] // 2]
 
-                data.append([image])
-            
-            trainer.logger.log_table("pred_table", ["image"], data)
+            images = []
+            for view, idx in zip(views, indices):
+                if view == "axial":
+                    pred_image = wandb.Image(pred_overlay[:, idx, :, :], caption=f"pred_{view}")
+                    gt_image = wandb.Image(gt_overlay[:, idx, :, :], caption=f"gt_{view}")
+                elif view == "coronal":
+                    pred_image = wandb.Image(pred_overlay[:, :, idx, :], caption=f"pred_{view}")
+                    gt_image = wandb.Image(gt_overlay[:, :, idx, :], caption=f"gt_{view}")
+                else:  # sagittal
+                    pred_image = wandb.Image(pred_overlay[:, :, :, idx], caption=f"pred_{view}")
+                    gt_image = wandb.Image(gt_overlay[:, :, :, idx], caption=f"gt_{view}")
+
+                images.extend([pred_image, gt_image])
+
+            # Log images to WandB
+            trainer.logger.log_image("images", images)

@@ -7,5 +7,5 @@ ct_fm_path="/mnt/data1/CT_FM/latest_fm_checkpoints/ct_fm_simclr_segresnetds_22_j
 
 
 # ######################### Groups - Merlin V2 ############################
-lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_merlin.yaml,./evaluation/baselines/segresnetds.yaml --trainer#callbacks#0#until_epoch=0 --vars#name="baseline" --vars#group="merlin" --vars#project="totalseg" --vars#wandb_tag='$["merlin", "v2"]'
-lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_merlin.yaml --trainer#callbacks#0#until_epoch=0 --vars#group="merlin" --system#model#trunk#ckpt_path=$ct_fm_path --vars#name="ct_fm" --vars#group="merlin" --vars#project="totalseg" --vars#wandb_tag='$["merlin", "v2"]'
+lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_merlin.yaml,./evaluation/baselines/segresnetds.yaml --vars#name="baseline" --vars#project="totalseg" --vars#wandb_tag='$["merlin", "v2"]'
+lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_merlin.yaml --system#model#trunk#ckpt_path=$ct_fm_path --vars#name="ct_fm" --vars#project="totalseg" --vars#wandb_tag='$["merlin", "v2"]'

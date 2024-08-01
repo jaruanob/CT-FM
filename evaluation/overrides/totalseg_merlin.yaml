@@ -7,7 +7,7 @@ system#datasets#train#data#filter_fn:
 system#datasets#val#data#filter_fn:
                       - "@vars#filter_fn"
                       - "$lambda x: x[x['split'] == 'val']"
-system#datasets#test#data#filter_fn:
+system#datasets#predict#data#filter_fn:
                       - "@vars#filter_fn"
                       - "$lambda x: x[x['split'] == 'test']"
 trainer#callbacks#0#until_epoch: 0
