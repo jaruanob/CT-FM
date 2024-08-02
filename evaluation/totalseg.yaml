@@ -13,7 +13,7 @@ args:
 vars:
     init_LR: 0.0002
     patch_size: "$[96, 160, 160] if @vars#format == 'lighter' else [160, 160, 96]"
-    val_max_patch_size: "$[256, 256, 256] if @vars#format == 'lighter' else [256, 256, 256]"
+    val_max_patch_size: "$[224, 256, 256] if @vars#format == 'lighter' else [256, 256, 224]"
     axcodes: "$'SPL' if @vars#format == 'lighter' else 'RAS'"
     in_channels: 1
     out_channels: "$len(@vars#class_indices)"
@@ -27,13 +27,12 @@ vars:
     # Percentage of the dataset to use
     percentage: 100
     group: "v2" # Options are "v1", "organ", "cardiac", "vertebrae", "ribs", "muscles"
-    wandb_tag: $f"{@#percentage}%"
     intensity_range: [-1024, 3072]
     # System specific variables
     dataset_dir: "/mnt/data1/TotalSegmentator/v2/processed"
     cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}/{@vars#group}_{@vars#name}"'
     format: "$'suprem' if 'suprem' in @vars#name else 'lighter'"
-    save_dir: '$f"/mnt/data1/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#name}_" + "_".join(@vars#wandb_tag)'
+    save_dir: '$f"/mnt/data1/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#name}_{@vars#wandb_group}"'
 
 trainer:
     _target_: pytorch_lightning.Trainer
@@ -53,7 +52,7 @@ trainer:
         project: "@vars#project"
         name: "@vars#name"
         save_dir:  "$@vars#save_dir.replace('checkpoints', 'logs')"
-        tags: "@vars#wandb_tag"
+        group: "@vars#wandb_group"
 
     callbacks:
         - _target_: lighter.callbacks.LighterFreezer
