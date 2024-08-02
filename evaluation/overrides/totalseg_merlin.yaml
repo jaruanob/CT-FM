@@ -1,0 +1,13 @@
+vars#group: "merlin_v2"
+vars#dataset_dir: "/mnt/data1/TotalSegmentator/v2/processed"
+vars#filter_fn: '$lambda x: x[x["study_type"].isin(["ct pelvis", "ct abdomen-pelvis", "ct abdomen", "ct thorax", "ct thorax-abdomen", "ct thorax-abdomen-pelvis"])]'
+system#datasets#train#data#filter_fn:
+                      - "@vars#filter_fn"
+                      - "$lambda x: x[x['split'] == 'train']"
+system#datasets#val#data#filter_fn:
+                      - "@vars#filter_fn"
+                      - "$lambda x: x[x['split'] == 'val']"
+system#datasets#predict#data#filter_fn:
+                      - "@vars#filter_fn"
+                      - "$lambda x: x[x['split'] == 'test']"
+trainer#callbacks#0#until_epoch: 0

@@ -1,11 +1,11 @@
-CONSTANTS#name: suprem_segresnet_eval
-CONSTANTS#embedding_dim: 128
-system#model#model#trunk:
+vars#embedding_dim: 128
+vars#axcodes: "RAS"
+system#model#trunk:
       _target_: project.models.suprem.SuPreM_loader
       model:
         _target_: monai.networks.nets.SegResNet
-        in_channels: "%CONSTANTS#in_channels"
-        out_channels: "%CONSTANTS#num_classes"
+        in_channels: "%vars#in_channels"
+        out_channels: "%vars#num_classes"
         init_filters: 16
         dropout_prob: 0.0
         blocks_down: [1, 2, 2, 4]

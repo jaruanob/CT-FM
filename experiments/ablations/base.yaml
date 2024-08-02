@@ -4,6 +4,10 @@ vars:
 
 project: .
 
+_requires_:
+    - "$import monai"
+    - "$import torch"
+
 trainer:
     _target_: pytorch_lightning.Trainer
     benchmark: True
@@ -11,8 +15,8 @@ trainer:
     max_epochs: 25
     limit_train_batches: 500
     accelerator: gpu
-    devices: 4
-    strategy: ddp
+    devices: 3
+    strategy: ddp_find_unused_parameters_false
     sync_batchnorm: True
     precision: 16-mixed
     log_every_n_steps: 100
@@ -20,11 +24,11 @@ trainer:
         _target_: pytorch_lightning.loggers.WandbLogger
         name: $f"CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
         project: CT_FM
-        save_dir: $f"/mnt/data1/CT_FM/technical_ablation/runs/logs/CT_FM_{@CONSTANTS#FRAMEWORK}_{@CONSTANTS#BACKBONE_NAME}"
+        save_dir: $f"/mnt/data1/CT_FM/technical_ablation/runs/logs/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
   
     callbacks:
         - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-          dirpath: $f"/mnt/data1/CT_FM/technical_ablation/runs/checkpoints/CT_FM_{@CONSTANTS#FRAMEWORK}_{@CONSTANTS#BACKBONE_NAME}"
+          dirpath: $f"/mnt/data1/CT_FM/technical_ablation/runs/checkpoints/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
           save_last: True
           verbose: True
           every_n_epochs: 1
@@ -40,13 +44,16 @@ system:
     optimizer:
         _target_: torch.optim.AdamW
         params: "$@system#model.parameters()"
+        lr: 0.0001
+        
         weight_decay: 0.000001
   
+
     scheduler:
         _target_: torch.optim.lr_scheduler.CosineAnnealingLR
         optimizer: "@system#optimizer"
         T_max: "%trainer#max_epochs"
-        eta_min: 0
+        eta_min: 0.000001
 
     datasets:
         train:

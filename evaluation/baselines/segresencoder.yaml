@@ -1,8 +1,7 @@
-CONSTANTS#name: random_init_eval
-system#model#model#trunk:
+system#model#trunk:
     _target_: monai.networks.nets.segresnet_ds.SegResEncoder
     spatial_dims: 3
-    in_channels: "@CONSTANTS#in_channels"
+    in_channels: "@vars#in_channels"
     init_filters: 32
     blocks_down: [1, 2, 2, 4, 4]
 

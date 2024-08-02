@@ -1,45 +1,75 @@
 project: .
-CONSTANTS:
+_requires_:
+    - "$import monai"
+    - "$import torch"
+
+args:
+  validate:
+    ckpt_path: $f"{@vars#save_dir}/best.ckpt"
+  test: "%#validate"
+  predict: "%#validate"
+
+
+vars:
     init_LR: 0.0002
-    patch_size: [96, 128, 128]
-    val_max_patch_size: [100, 384, 384] # This is for the val dataset due to the large size of the images
-    axcodes: SPL
+    patch_size: "$[96, 160, 160] if @vars#format == 'lighter' else [160, 160, 96]"
+    val_max_patch_size: "$[224, 256, 256] if @vars#format == 'lighter' else [256, 256, 224]"
+    axcodes: "$'SPL' if @vars#format == 'lighter' else 'RAS'"
     in_channels: 1
-    out_channels: 105
+    out_channels: "$len(@vars#class_indices)"
+    class_indices:
+      _target_: project.data.get_ts_class_indices
+      group: "@vars#group"
+    class_labels:
+      _target_: project.data.get_ts_class_labels
+      class_indices: "@vars#class_indices"
+      group: "@vars#group"
     # Percentage of the dataset to use
     percentage: 100
-    group: "all" # Options are "all", "organ", "cardiac", "vertebrae", "ribs", "muscles"
+    group: "v2" # Options are "v1", "organ", "cardiac", "vertebrae", "ribs", "muscles"
     intensity_range: [-1024, 3072]
-    # Wandb project 
-    project: "totalseg_eval"
     # System specific variables
-    dataset_dir: "/mnt/data1/SOTASeg/Dataset600_TotalSegmentator_all_fullres"
-    cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@CONSTANTS#project}/{@CONSTANTS#format}"'
-    format: "$'suprem' if 'suprem' in @CONSTANTS#name else 'lighter'"
+    dataset_dir: "/mnt/data1/TotalSegmentator/v2/processed"
+    cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}/{@vars#group}_{@vars#name}"'
+    format: "$'suprem' if 'suprem' in @vars#name else 'lighter'"
+    save_dir: '$f"/mnt/data1/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#name}_{@vars#wandb_group}"'
 
 trainer:
     _target_: pytorch_lightning.Trainer
     benchmark: True
     max_epochs: 200
-    check_val_every_n_epoch: 5
+    check_val_every_n_epoch: 1
     accelerator: gpu
     # ---------
     devices: 4
-    strategy: ddp_find_unused_parameters_true
+    strategy: ddp
     sync_batchnorm: True
     # ---------
     precision: 16-mixed
     log_every_n_steps: 10
     logger:
         _target_: pytorch_lightning.loggers.WandbLogger
-        project: "@CONSTANTS#project"
-        name: '$f"{@CONSTANTS#name}_{@CONSTANTS#percentage}%"'
-        save_dir: '$f"/mnt/data1/CT_FM/{@CONSTANTS#project}/logs/{@CONSTANTS#name}_{@CONSTANTS#percentage}"'
+        project: "@vars#project"
+        name: "@vars#name"
+        save_dir:  "$@vars#save_dir.replace('checkpoints', 'logs')"
+        group: "@vars#wandb_group"
 
     callbacks:
         - _target_: lighter.callbacks.LighterFreezer
-          # _orig_mod is torch.compile added notation
           name_starts_with: ["trunk.encoder"]
+
+        - _target_: pytorch_lightning.callbacks.ModelCheckpoint
+          dirpath: "@vars#save_dir"
+          save_last: False
+          monitor: "val/metrics/Avg_Dice/epoch"
+          mode: "max"
+          filename: "best"
+          auto_insert_metric_name: False
+          verbose: True
+          every_n_epochs: 1
+
+        - _target_: project.callbacks.WandbImageLogger
+
 system:
     _target_: lighter.LighterSystem
     batch_size: 2
@@ -49,13 +79,14 @@ system:
         _target_: project.models.wrapper.TrunkHeadWrapper
         trunk:
           _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
-          ckpt_path: /mnt/data1/CT_FM/IDC_SSL_CT/runs/checkpoints/CT_FM_Reconstruction_SegResNetDS/epoch=79-step=40000.ckpt
-          ckpt_to_model_prefix: '${"backbone.encoder" : "encoder"} if "recon" in @CONSTANTS#name else {"backbone.": "encoder"}'
+          ckpt_path: 
+          # ckpt_to_model_prefix: '${"_orig_mod.backbone.encoder" : "encoder"} if "recon" in @vars#name else {"_orig_mod.backbone.": "encoder"}'
+          ckpt_to_model_prefix: '${"backbone.encoder" : "encoder"} if "recon" in @vars#name else {"backbone.": "encoder"}'
           model:
             _target_: monai.networks.nets.SegResNetDS
             spatial_dims: 3
-            in_channels: "%CONSTANTS#in_channels"
-            out_channels: "%CONSTANTS#out_channels"
+            in_channels: "@vars#in_channels"
+            out_channels: "@vars#out_channels"
             init_filters: 32
             blocks_down: [1, 2, 2, 4, 4]
             dsdepth: 4
@@ -75,7 +106,7 @@ system:
     optimizer:
         _target_: torch.optim.AdamW
         params: "$@system#model.parameters()"
-        lr: "%CONSTANTS#init_LR"
+        lr: "@vars#init_LR"
         weight_decay: 1.0e-05 
 
     scheduler:
@@ -87,29 +118,34 @@ system:
     metrics:
         train:
           Dice:
-              _target_: torchmetrics.Dice
-              num_classes: "%CONSTANTS#out_channels"
-              ignore_index: 0
-          Macro_Dice:
-              _target_: torchmetrics.Dice
-              num_classes: "%CONSTANTS#out_channels"
-              average: macro
-              ignore_index: 0
+              _target_: torchmetrics.wrappers.ClasswiseWrapper
+              metric:
+                _target_: project.metrics.monai.GeneralizedDiceScore
+                include_background: True
+                per_class: True
+                weight_type: "uniform"
+              labels: "@vars#class_labels"
+          Avg_Dice:
+              _target_: project.metrics.monai.GeneralizedDiceScore
+              include_background: False
+              per_class: False
+              weight_type: "uniform"
         val: "%#train"
-        test: "%#train"
 
     datasets:
         train:
             _target_: monai.data.PersistentDataset
-            cache_dir: '$f"{@CONSTANTS#cache_dir}/train"'
+            cache_dir: '$f"{@vars#cache_dir}/train"'
             hash_transform: "$monai.data.utils.json_hashing"
             data:
-                _target_: project.data.get_image_label_paths
-                data_dir: "%CONSTANTS#dataset_dir"
-                split: train
-                percentage: "%CONSTANTS#percentage"
+                _target_: project.data.get_ts_datalist
+                data_dir: "@vars#dataset_dir"
+                filter_fn: 
+                    - "$lambda x: x[x['split'] == 'train']"
+                percentage: "@vars#percentage"
             transform:
                 _target_: monai.transforms.Compose
+                # map_items: False
                 transforms: 
                     - _target_: monai.transforms.LoadImaged
                       reader: "ITKReader"
@@ -119,11 +155,18 @@ system:
                       keys: ["image", "label"]
                     - _target_: monai.transforms.Orientationd
                       keys: ["image", "label"]
-                      axcodes: "%CONSTANTS#axcodes"
+                      axcodes: "@vars#axcodes"
+                    - _target_: monai.transforms.LabelFilterd
+                      keys: label
+                      applied_labels: "@vars#class_indices"
+                    - _target_: monai.transforms.MapLabelValued
+                      keys: label
+                      orig_labels: "@vars#class_indices"
+                      target_labels: "$list(range(0, @vars#out_channels))"
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
-                      a_min: "$@CONSTANTS#intensity_range[0]"
-                      a_max: "$@CONSTANTS#intensity_range[1]"
+                      a_min: "$@vars#intensity_range[0]"
+                      a_max: "$@vars#intensity_range[1]"
                       b_min: 0
                       b_max: 1
                       clip: True
@@ -133,18 +176,27 @@ system:
                       margin: 10
                     - _target_: monai.transforms.SpatialPadd
                       keys: ["image", "label"]
-                      spatial_size: "%CONSTANTS#patch_size"
+                      spatial_size: "@vars#patch_size"
                       mode: constant
-                    - _target_: monai.transforms.RandSpatialCropd # Change this to something with negative sampling
-                      keys: ["image", "label"]
-                      roi_size: "%CONSTANTS#patch_size"
-                      random_size: False                      
+                    # - _target_: monai.transforms.RandCropByLabelClassesd # Change this to something with negative sampling
+                    #   keys: ["image", "label"]
+                    #   label_key: "label"
+                    #   image_key: "image"
+                    #   ratios: "$[1]*@vars#out_channels"
+                    #   num_classes: "@vars#out_channels"
+                    #   num_samples: 1
+                    #   image_threshold: 0
+                    #   spatial_size: "@vars#patch_size"   
+                    # - _target_: monai.transforms.Lambda
+                    #   func: '$lambda x: x[0]' # Index sample
+                    #   track_meta: False                        
                     - _target_: monai.transforms.RandAffined
                       keys: ["image", "label"]
+                      mode: ["bilinear", "nearest"]
                       prob: 0.2
                       rotate_range: [0.26, 0.26, 0.26]
                       scale_range: [0.2, 0.2, 0.2]
-                      spatial_size: "%CONSTANTS#patch_size"
+                      spatial_size: "@vars#patch_size"
                       cache_grid: True
                       padding_mode: constant
                     - _target_: monai.transforms.RandGaussianSmoothd
@@ -166,18 +218,19 @@ system:
                       std: 0.1
                       prob: 0.2
                     - _target_: monai.transforms.Lambda
-                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor()}'
+                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor(), "id": x["id"]}'
                       track_meta: False
     
         val:
-            _target_: monai.data.Dataset
-            # cache_dir: '$f"{@CONSTANTS#cache_dir}/val"'
-            # hash_transform: "$monai.data.utils.json_hashing"
+            _target_: monai.data.PersistentDataset
+            cache_dir: '$f"{@vars#cache_dir}/val"'
+            hash_transform: "$monai.data.utils.json_hashing"
             data:
-                _target_: project.data.get_image_label_paths
-                data_dir: "%CONSTANTS#dataset_dir"
-                split: val
-                percentage: 100 # 25 samples
+                _target_: project.data.get_ts_datalist
+                data_dir: "@vars#dataset_dir"
+                filter_fn: 
+                    - "$lambda x: x[x['split'] == 'val']"
+                percentage: "@vars#percentage" 
             transform:
                 _target_: monai.transforms.Compose
                 transforms:
@@ -189,16 +242,18 @@ system:
                       keys: ["image", "label"]
                     - _target_: monai.transforms.Orientationd
                       keys: ["image", "label"]
-                      axcodes: "%CONSTANTS#axcodes"
+                      axcodes: "@vars#axcodes"
                     - _target_: monai.transforms.LabelFilterd
                       keys: label
-                      applied_labels: 
-                        _target_: project.data.get_ts_class_indices
-                        group: "@CONSTANTS#group"
+                      applied_labels: "@vars#class_indices"
+                    - _target_: monai.transforms.MapLabelValued
+                      keys: label
+                      orig_labels: "@vars#class_indices"
+                      target_labels: "$list(range(0, @vars#out_channels))"
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
-                      a_min: "$@CONSTANTS#intensity_range[0]"
-                      a_max: "$@CONSTANTS#intensity_range[1]"
+                      a_min: "$@vars#intensity_range[0]"
+                      a_max: "$@vars#intensity_range[1]"
                       b_min: 0
                       b_max: 1
                       clip: True
@@ -208,34 +263,80 @@ system:
                       margin: 10
                     - _target_: monai.transforms.RandSpatialCropd
                       keys: ["image", "label"]
-                      roi_size: "%CONSTANTS#val_max_patch_size"
+                      roi_size: "@vars#val_max_patch_size"
                       random_size: False
                     - _target_: monai.transforms.Lambda
-                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor()}'
+                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor(), "id": x["id"]}'
                       track_meta: False
+
+        predict:
+            _target_: monai.data.Dataset
+            data:
+                _target_: project.data.get_ts_datalist
+                data_dir: "@vars#dataset_dir"
+                filter_fn: 
+                    - "$lambda x: x[x['split'] == 'test']"
+                percentage: 100
+            transform:
+                _target_: monai.transforms.Compose
+                transforms:
+                    - _target_: monai.transforms.LoadImaged
+                      keys: ["image", "label"]
+                      reader: "ITKReader"
+                      ensure_channel_first: True
+                    - _target_: monai.transforms.EnsureTyped
+                      keys: ["image", "label"]
+                    - _target_: monai.transforms.Orientationd
+                      keys: ["image", "label"]
+                      axcodes: "@vars#axcodes"
+                    - _target_: monai.transforms.LabelFilterd
+                      keys: label
+                      applied_labels: "@vars#class_indices"
+                    - _target_: monai.transforms.MapLabelValued
+                      keys: label
+                      orig_labels: "@vars#class_indices"
+                      target_labels: "$list(range(0, @vars#out_channels))"
+                    - _target_: monai.transforms.ScaleIntensityRanged
+                      keys: image
+                      a_min: "$@vars#intensity_range[0]"
+                      a_max: "$@vars#intensity_range[1]"
+                      b_min: 0
+                      b_max: 1
+                      clip: True
+                    - _target_: monai.transforms.CropForegroundd
+                      keys: ["image", "label"]
+                      source_key: image
+                      margin: 10
+                    - _target_: monai.transforms.Lambda
+                      func: '$lambda x: {"input": x["image"], "target": x["label"], "id": x["id"]}'
 
     postprocessing:
         metrics:
             pred: # Pred for torchmetrics is (N, C, ...)
                 # Hacky solution below. DS returns a list when model is in train mode 
-                - "$lambda x: x[0] if isinstance(x, (list, tuple)) else x" 
+                - "$lambda x: x[0] if isinstance(x, list) else x" 
                 - "$lambda x: torch.softmax(x, 1)"
+                # Generalized dice score needs an argmax. 
+                - "$lambda x: torch.argmax(x, 1)"
+                # Onehot encode for generalized dice score
+                - "$lambda x: torch.nn.functional.one_hot(x, num_classes=@vars#out_channels).permute(0, 4, 1, 2, 3).float()"
 
             target:
                 # Remove the channel dim. Target for torchmetrics is (N, ...)
                 - "$lambda tensor: tensor.squeeze(1)"
                 - "$lambda tensor: tensor.long()"
+                # Onehot encode for generalized dice score
+                - "$lambda x: torch.nn.functional.one_hot(x, num_classes=@vars#out_channels).permute(0, 4, 1, 2, 3).float()"
+
         logging:              
             pred:
                 - "$lambda x: x.argmax(dim=1, keepdim=True)"
-                - "$lambda x: x.float()"
             target:
-                - "$lambda x: x.unsqueeze(1)"
-                - "$lambda x: x.float()"
+                - "$lambda x: x.argmax(dim=1, keepdim=True)"
 
     inferer:
         _target_: monai.inferers.SlidingWindowInferer
-        roi_size: "%CONSTANTS#patch_size"
+        roi_size: "@vars#patch_size"
         sw_batch_size: "%system#batch_size"
         overlap: 0.5
         mode: gaussian
