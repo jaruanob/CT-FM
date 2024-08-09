@@ -13,7 +13,7 @@ args:
 vars:
     init_LR: 0.0002
     patch_size: "$[96, 160, 160] if @vars#format == 'lighter' else [160, 160, 96]"
-    val_max_patch_size: "$[224, 256, 256] if @vars#format == 'lighter' else [256, 256, 224]"
+    val_max_patch_size: "$[224, 240, 240] if @vars#format == 'lighter' else [240, 240, 224]"
     axcodes: "$'SPL' if @vars#format == 'lighter' else 'RAS'"
     in_channels: 1
     out_channels: "$len(@vars#class_indices)"
@@ -37,7 +37,7 @@ vars:
 trainer:
     _target_: pytorch_lightning.Trainer
     benchmark: True
-    max_epochs: 200
+    max_epochs: 300
     check_val_every_n_epoch: 1
     accelerator: gpu
     # ---------
@@ -61,7 +61,7 @@ trainer:
         - _target_: pytorch_lightning.callbacks.ModelCheckpoint
           dirpath: "@vars#save_dir"
           save_last: False
-          monitor: "val/metrics/Avg_Dice/epoch"
+          monitor: "val/metrics/Macro_Dice/epoch"
           mode: "max"
           filename: "best"
           auto_insert_metric_name: False
@@ -110,26 +110,32 @@ system:
         weight_decay: 1.0e-05 
 
     scheduler:
-        _target_: torch.optim.lr_scheduler.CosineAnnealingLR
-        optimizer: "@system#optimizer"
-        T_max: "%trainer#max_epochs"
-        eta_min: 0
+      scheduler:
+          _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
+          optimizer: "@system#optimizer"
+          factor: 0.5
+      monitor: "val/loss/epoch"
 
     metrics:
         train:
-          Dice:
-              _target_: torchmetrics.wrappers.ClasswiseWrapper
-              metric:
-                _target_: project.metrics.monai.GeneralizedDiceScore
-                include_background: True
-                per_class: True
-                weight_type: "uniform"
-              labels: "@vars#class_labels"
-          Avg_Dice:
-              _target_: project.metrics.monai.GeneralizedDiceScore
+          # Classwise_Dice:
+          #     _target_: torchmetrics.wrappers.ClasswiseWrapper
+          #     metric:
+          #       _target_: project.metrics.monai.DiceScore
+          #       include_background: True
+          #       per_class: True
+          #     labels: "@vars#class_labels"
+          Macro_Dice:
+              _target_: project.metrics.monai.DiceScore
               include_background: False
               per_class: False
-              weight_type: "uniform"
+          Dice:
+              _target_: torchmetrics.Dice
+              compute_on_cpu: True
+              compute_with_cache: False
+              ignore_index: 0
+              num_classes: "@vars#out_channels"
+              
         val: "%#train"
 
     datasets:
@@ -145,7 +151,7 @@ system:
                 percentage: "@vars#percentage"
             transform:
                 _target_: monai.transforms.Compose
-                # map_items: False
+                map_items: False
                 transforms: 
                     - _target_: monai.transforms.LoadImaged
                       reader: "ITKReader"
@@ -178,25 +184,29 @@ system:
                       keys: ["image", "label"]
                       spatial_size: "@vars#patch_size"
                       mode: constant
-                    # - _target_: monai.transforms.RandCropByLabelClassesd # Change this to something with negative sampling
+                    - _target_: monai.transforms.RandCropByLabelClassesd # Change this to something with negative sampling
+                      keys: ["image", "label"]
+                      label_key: "label"
+                      image_key: "image"
+                      ratios: "$[0] + [1]*(@vars#out_channels-1)"
+                      num_classes: "@vars#out_channels"
+                      num_samples: 1
+                      spatial_size: "@vars#patch_size"   
+                      warn: False
+                    - _target_: monai.transforms.Lambda
+                      func: '$lambda x: x[0]' # Index sample
+                      track_meta: False
+                    # - _target_: monai.transforms.RandSpatialCropd # Change this to something with negative sampling
                     #   keys: ["image", "label"]
-                    #   label_key: "label"
-                    #   image_key: "image"
-                    #   ratios: "$[1]*@vars#out_channels"
-                    #   num_classes: "@vars#out_channels"
-                    #   num_samples: 1
-                    #   image_threshold: 0
-                    #   spatial_size: "@vars#patch_size"   
-                    # - _target_: monai.transforms.Lambda
-                    #   func: '$lambda x: x[0]' # Index sample
-                    #   track_meta: False                        
+                    #   roi_size: "%vars#patch_size"
+                    #   random_size: False                      
                     - _target_: monai.transforms.RandAffined
                       keys: ["image", "label"]
                       mode: ["bilinear", "nearest"]
                       prob: 0.2
                       rotate_range: [0.26, 0.26, 0.26]
                       scale_range: [0.2, 0.2, 0.2]
-                      spatial_size: "@vars#patch_size"
+                      # spatial_size: "@vars#patch_size"
                       cache_grid: True
                       padding_mode: constant
                     - _target_: monai.transforms.RandGaussianSmoothd
@@ -280,35 +290,38 @@ system:
             transform:
                 _target_: monai.transforms.Compose
                 transforms:
-                    - _target_: monai.transforms.LoadImaged
+                    - _target_: monai.transforms.CopyItemsd
                       keys: ["image", "label"]
+                      names: ["input", "target",]
+                    - _target_: monai.transforms.LoadImaged
+                      keys: ["input", "target"]
                       reader: "ITKReader"
                       ensure_channel_first: True
                     - _target_: monai.transforms.EnsureTyped
-                      keys: ["image", "label"]
+                      keys: ["input", "target"]
                     - _target_: monai.transforms.Orientationd
-                      keys: ["image", "label"]
+                      keys: ["input", "target"]
                       axcodes: "@vars#axcodes"
                     - _target_: monai.transforms.LabelFilterd
-                      keys: label
+                      keys: target
                       applied_labels: "@vars#class_indices"
                     - _target_: monai.transforms.MapLabelValued
-                      keys: label
+                      keys: target
                       orig_labels: "@vars#class_indices"
                       target_labels: "$list(range(0, @vars#out_channels))"
                     - _target_: monai.transforms.ScaleIntensityRanged
-                      keys: image
+                      keys: input
                       a_min: "$@vars#intensity_range[0]"
                       a_max: "$@vars#intensity_range[1]"
                       b_min: 0
                       b_max: 1
                       clip: True
                     - _target_: monai.transforms.CropForegroundd
-                      keys: ["image", "label"]
-                      source_key: image
+                      keys: ["input", "target"]
+                      source_key: input
                       margin: 10
-                    - _target_: monai.transforms.Lambda
-                      func: '$lambda x: {"input": x["image"], "target": x["label"], "id": x["id"]}'
+                    - _target_: monai.transforms.SelectItemsd
+                      keys: ["input", "target", "id"]                      
 
     postprocessing:
         metrics:
@@ -316,23 +329,15 @@ system:
                 # Hacky solution below. DS returns a list when model is in train mode 
                 - "$lambda x: x[0] if isinstance(x, list) else x" 
                 - "$lambda x: torch.softmax(x, 1)"
-                # Generalized dice score needs an argmax. 
-                - "$lambda x: torch.argmax(x, 1)"
-                # Onehot encode for generalized dice score
-                - "$lambda x: torch.nn.functional.one_hot(x, num_classes=@vars#out_channels).permute(0, 4, 1, 2, 3).float()"
-
             target:
-                # Remove the channel dim. Target for torchmetrics is (N, ...)
-                - "$lambda tensor: tensor.squeeze(1)"
-                - "$lambda tensor: tensor.long()"
-                # Onehot encode for generalized dice score
-                - "$lambda x: torch.nn.functional.one_hot(x, num_classes=@vars#out_channels).permute(0, 4, 1, 2, 3).float()"
+                - "$lambda x: x.squeeze(1).long()"
 
         logging:              
             pred:
                 - "$lambda x: x.argmax(dim=1, keepdim=True)"
+
             target:
-                - "$lambda x: x.argmax(dim=1, keepdim=True)"
+                - "$lambda x: x.unsqueeze(1)"
 
     inferer:
         _target_: monai.inferers.SlidingWindowInferer

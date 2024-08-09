@@ -17,6 +17,7 @@ BODY_PART_IDS = {
 def get_ts_class_indices(group="v1"):
     assert group in BODY_PART_IDS.keys()
     class_indices = sorted([0] + BODY_PART_IDS[group])
+    print(f"Number of classes: {len(class_indices)}")
     return class_indices
 
 def get_ts_class_labels(class_indices, group="v1"):
@@ -39,7 +40,7 @@ def get_ts_datalist(data_dir, percentage=100, filter_fn=[]):
     images = images[: int(len(images) * percentage / 100)]
     labels = labels[: int(len(labels) * percentage / 100)]
 
-    print(f"Number of ]images: {len(images)}")
+    print(f"Number of images: {len(images)}")
 
     return [
         {"image": image, "label": label, "id": id}
