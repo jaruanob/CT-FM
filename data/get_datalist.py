@@ -39,13 +39,13 @@ def get_msd_datalist(data_dir, split, task="Task06_Lung"):
 
     match split:
         case "train":
-            return [{"image": data_dir / task / item["image"], "label": data_dir  / task / item["label"]} 
+            return [{"image": data_dir / task / item["image"], "label": data_dir  / task / item["label"], "id": item["image"].split(".")[0]} 
                             for item in vista_json_data["training"] if item["fold"] != 4]
         case "val":
-            return [{"image": data_dir / task /item["image"], "label": data_dir  / task / item["label"]} 
+            return [{"image": data_dir / task /item["image"], "label": data_dir  / task / item["label"], "id": item["image"].split(".")[0]} 
                             for item in vista_json_data["training"] if item["fold"] == 4]
         case "test":
-            return [{"image": data_dir / task / item["image"], "label": data_dir / task / item["label"]} 
+            return [{"image": data_dir / task / item["image"], "label": data_dir / task / item["label"], "id": item["image"].split(".")[0]} 
                             for item in vista_json_data["testing"]]
     
     
