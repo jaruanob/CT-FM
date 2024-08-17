@@ -31,7 +31,7 @@ vars:
     # System specific variables
     dataset_dir: "/mnt/data1/TotalSegmentator/v2/processed"
     cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}/{@vars#group}_{@vars#name}"'
-    format: "$'suprem' if 'suprem' in @vars#name or 'vista' in @vars#name else 'lighter'"
+    format: "$'monai' if 'suprem' in @vars#name or 'vista' in @vars#name else 'lighter'"
     save_dir: '$f"/mnt/data1/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#name}_{@vars#wandb_group}"'
 
 trainer:
