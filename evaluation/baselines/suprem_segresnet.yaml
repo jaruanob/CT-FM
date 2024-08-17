@@ -13,7 +13,7 @@ system#model:
       ckpt_path: "/mnt/data1/CT_FM/baselines/SuPreM_SegResNet/supervised_suprem_segresnet_2100.pth"
       decoder: False
 
-trainer#callbacks:
-        - _target_: lighter.callbacks.LighterFreezer
-          # _orig_mod is torch.compile added notation
-          name_starts_with: ["convInit", "down_layers"]
+trainer#callbacks#0:
+         _target_: lighter.callbacks.LighterFreezer
+        # _orig_mod is torch.compile added notation
+        name_starts_with: ["convInit", "down_layers"]
