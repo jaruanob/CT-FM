@@ -5,7 +5,7 @@ _requires_:
 
 args:
   validate:
-    ckpt_path: $f"{@vars#save_dir}/best.ckpt"
+    ckpt_path: $f"{@vars#save_dir}/best-v1.ckpt"
   test: "%#validate"
   predict: "%#validate"
 
@@ -13,7 +13,7 @@ args:
 vars:
     init_LR: 0.0002
     patch_size: "$[96, 160, 160] if @vars#format == 'lighter' else [160, 160, 96]"
-    val_max_patch_size: "$[224, 240, 240] if @vars#format == 'lighter' else [240, 240, 224]"
+    val_max_patch_size: "$[192, 240, 240] if @vars#format == 'lighter' else [240, 240, 192]"
     axcodes: "$'SPL' if @vars#format == 'lighter' else 'RAS'"
     in_channels: 1
     out_channels: "$len(@vars#class_indices)"
@@ -31,14 +31,14 @@ vars:
     # System specific variables
     dataset_dir: "/mnt/data1/TotalSegmentator/v2/processed"
     cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}/{@vars#group}_{@vars#name}"'
-    format: "$'suprem' if 'suprem' in @vars#name else 'lighter'"
+    format: "$'monai' if 'suprem' in @vars#name or 'vista' in @vars#name else 'lighter'"
     save_dir: '$f"/mnt/data1/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#name}_{@vars#wandb_group}"'
 
 trainer:
     _target_: pytorch_lightning.Trainer
     benchmark: True
-    max_epochs: 300
-    check_val_every_n_epoch: 1
+    max_epochs: 200
+    check_val_every_n_epoch: 5
     accelerator: gpu
     # ---------
     devices: 4
@@ -66,7 +66,7 @@ trainer:
           filename: "best"
           auto_insert_metric_name: False
           verbose: True
-          every_n_epochs: 1
+          every_n_epochs: 5
 
         - _target_: project.callbacks.WandbImageLogger
 
@@ -110,11 +110,12 @@ system:
         weight_decay: 1.0e-05 
 
     scheduler:
-      scheduler:
-          _target_: torch.optim.lr_scheduler.ReduceLROnPlateau
-          optimizer: "@system#optimizer"
-          factor: 0.5
-      monitor: "val/loss/epoch"
+        _target_: monai.optimizers.WarmupCosineSchedule
+        optimizer: "@system#optimizer"
+        warmup_steps: "$@trainer#max_epochs/100"
+        end_lr:  "$@system#optimizer#lr * 0.01"
+        warmup_multiplier: 0.1
+        t_total: "@trainer#max_epochs"
 
     metrics:
         train:
@@ -343,5 +344,5 @@ system:
         _target_: monai.inferers.SlidingWindowInferer
         roi_size: "@vars#patch_size"
         sw_batch_size: "%system#batch_size"
-        overlap: 0.5
+        overlap: 0.625
         mode: gaussian
