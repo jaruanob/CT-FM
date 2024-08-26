@@ -28,8 +28,8 @@ vars:
     # System specific variables
     format: "$'monai' if 'suprem' in @vars#name or 'vista' in @vars#name else 'lighter'"
     dataset_dir: "/mnt/data6/ibro/Datasets/SinoCT"
-    cache_dir: '$f"/home/ibrahim/Projects/Persistent-MONAI/{@vars#project}/{@vars#format}/{@vars#percentage}"'
-    save_dir: '$f"home/ibrahim/Projects/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#name}"'
+    cache_dir: '$f"/home/ibrahim/Projects/CT_FM/cache_data/{@vars#project}/{@vars#format}/{@vars#percentage}"'
+    save_dir: '$f"/home/ibrahim/Projects/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#wandb_group}/{@vars#name}"'
 
 trainer:
     _target_: pytorch_lightning.Trainer
@@ -46,11 +46,11 @@ trainer:
     log_every_n_steps: 30
     callbacks:
         - _target_: lighter.callbacks.LighterFreezer
-          name_starts_with: ["trunk.encoder"]
+          name_starts_with: ["trunk"]
         - _target_: pytorch_lightning.callbacks.ModelCheckpoint
           dirpath: "@vars#save_dir"
           save_last: False
-          monitor: "val/metrics/BinaryAUROC"
+          monitor: "val/metrics/BinaryAUROC/epoch"
           mode: "max"
           filename: "best"
           auto_insert_metric_name: False
@@ -61,6 +61,7 @@ trainer:
         project: "@vars#project"
         name: "@vars#name"
         save_dir: "$@vars#save_dir.replace('checkpoints', 'logs')"
+        group: "@vars#wandb_group"
 
 
 system:
@@ -72,10 +73,6 @@ system:
     model:
         _target_: project.models.wrapper.TrunkHeadWrapper
         trunk:
-            _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
-            ckpt_path:
-            ckpt_to_model_prefix: '${"backbone.encoder" : ""} if "recon" in @vars#name else {"backbone.": ""}'
-            model:
         head:
             - _target_: torch.nn.AdaptiveAvgPool3d
               output_size: 1
