@@ -5,7 +5,7 @@ _requires_:
 
 args:
   validate:
-    ckpt_path: $f"{@vars#save_dir}/best-v1.ckpt"
+    ckpt_path: $f"{@vars#save_dir}/best.ckpt"
   test: "%#validate"
   predict: "%#validate"
 
@@ -27,7 +27,7 @@ vars:
     # Percentage of the dataset to use
     percentage: 100
     group: "v2" # Options are "v1", "organ", "cardiac", "vertebrae", "ribs", "muscles"
-    intensity_range: [-1024, 3072]
+    intensity_range: [-1024, 2048]
     # System specific variables
     dataset_dir: "/mnt/data1/TotalSegmentator/v2/processed"
     cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}/{@vars#group}_{@vars#name}"'
@@ -37,7 +37,7 @@ vars:
 trainer:
     _target_: pytorch_lightning.Trainer
     benchmark: True
-    max_epochs: 200
+    max_epochs: 300
     check_val_every_n_epoch: 5
     accelerator: gpu
     # ---------

@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 import pandas as pd
 from lighter.utils.misc import apply_fns
@@ -37,8 +38,8 @@ def get_ts_datalist(data_dir, percentage=100, filter_fn=[]):
     images = [data_dir / id / "ct.nii.gz" for id in ids]
     labels = [data_dir / id / "label.nii.gz" for id in ids]
 
-    images = images[: int(len(images) * percentage / 100)]
-    labels = labels[: int(len(labels) * percentage / 100)]
+    images = images[: math.ceil(len(images) * percentage / 100)]
+    labels = labels[: math.ceil(len(labels) * percentage / 100)]
 
     print(f"Number of images: {len(images)}")
 
