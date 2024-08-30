@@ -1,7 +1,8 @@
 vars#task: "Task06_Lung"
 vars#out_channels: 2
-vars#intensity_range: [-1024, 250]
+vars#intensity_range: [-1024, 325]
 vars#spacing: "$[1, 0.8, 0.8] if @vars#format == 'lighter' else [0.8, 0.8, 1]"
 vars#project: "msd"
 vars#wandb_group: "task06_lung"
 trainer#callbacks#0#until_epoch: 0
+trainer#max_epochs: 300

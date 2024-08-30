@@ -10,16 +10,15 @@ args:
   test: "%#validate"
   predict: "%#validate"
 
-
 vars:
     init_LR: 0.0002
     task: "Task06_Lung"
-    patch_size: "$[224, 224, 224] if @vars#format == 'lighter' else [224, 224, 224]"
+    patch_size: "$[144, 224, 224] if @vars#format == 'lighter' else [224, 224, 144]"
     axcodes: "$'SPL' if @vars#format == 'lighter' else 'RAS'"
     spacing: "$[1, 0.8, 0.8] if @vars#format == 'lighter' else [0.8, 0.8, 1]"
     in_channels: 1
     out_channels: 2
-    intensity_range: [-1024, 250]
+    intensity_range: [-1024, 2048]
     dataset_dir: "/mnt/data8/MedicalSegmentationDecathlon"
     cache_dir: '$f"/mnt/data8/suraj/lighter_cache/{@vars#project}/{@vars#format}/{@vars#name}"'
     format: "$'suprem' if 'suprem' in @vars#name else 'lighter'"
@@ -64,7 +63,7 @@ trainer:
 
 system:
     _target_: lighter.LighterSystem
-    batch_size: 2
+    batch_size: 4
     pin_memory: True
     num_workers: 8
     model:
@@ -111,10 +110,6 @@ system:
 
     metrics:
         train:
-          Macro_Dice:
-              _target_: project.metrics.monai.DiceScore
-              include_background: False
-              per_class: False
           Dice:
               _target_: torchmetrics.Dice
               compute_on_cpu: True
@@ -122,10 +117,13 @@ system:
               ignore_index: 0
               num_classes: "@vars#out_channels"
         val: "%#train"
+        test: "%#train"
 
     datasets:
         train:
-            _target_: monai.data.CacheDataset
+            _target_: monai.data.PersistentDataset
+            cache_dir: '$f"{@vars#cache_dir}/train"'
+            hash_transform: "$monai.data.utils.json_hashing"
             data:
                 _target_: project.data.get_msd_datalist
                 data_dir: "@vars#dataset_dir"
@@ -205,11 +203,13 @@ system:
                       track_meta: False
     
         val:
-            _target_: monai.data.CacheDataset
+            _target_: monai.data.PersistentDataset
+            cache_dir: '$f"{@vars#cache_dir}/val"'
+            hash_transform: "$monai.data.utils.json_hashing"
             data:
                 _target_: project.data.get_msd_datalist
                 data_dir: "@vars#dataset_dir"
-                split: "train"
+                split: "val"
                 task: "@vars#task"
             transform:
                 _target_: monai.transforms.Compose
@@ -264,7 +264,7 @@ system:
                     - _target_: monai.transforms.Spacingd
                       keys: ["image", "label"]
                       pixdim: "@vars#spacing"
-                      mode: ["bilinear", "nearest"]
+                      mode: ["bilinear", "nearest"]                          
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@vars#intensity_range[0]"
@@ -277,7 +277,10 @@ system:
                       source_key: image
                       margin: 10
                     - _target_: monai.transforms.Lambda
-                      func: '$lambda x: {"input": x["image"], "target": x["label"], "id": x["id"]}'
+                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor(), "id": x["id"]}'
+                      track_meta: False
+          
+        test: "%#predict"
 
     postprocessing:
         metrics:
@@ -299,5 +302,5 @@ system:
         _target_: monai.inferers.SlidingWindowInferer
         roi_size: "@vars#patch_size"
         sw_batch_size: "%system#batch_size"
-        overlap: 0.5
+        overlap: 0.625
         mode: gaussian
