@@ -162,8 +162,8 @@ def _get_patient_dirs(data_dir, percentage, split, split_ratio=(0.8, 0.1, 0.1), 
 
 def get_sinoct_datalist(data_dir, percentage, split, split_ratio=(0.8, 0.1, 0.1), seed=0):
     labels_df = pd.read_csv(Path(data_dir) / "labels.csv", index_col="patient_id")
-    # Create "abnormal" column by using "label" column. Set to 0 if label is "0,1", and 1 if "1,0".
-    labels_df["abnormal"] = labels_df["label"].apply(lambda x: int(x.split(",")[0] == "1"))
+    # Create "abnormal" column by using "label" column. Set to 0 (normal) if label is "1,0", and 1 (abnormal) if "0,1".
+    labels_df["abnormal"] = labels_df["label"].apply(lambda x: int(x.split(",")[1]))
     # Drop all the other columns except for patient_id and abnormal
     labels_df = labels_df[["abnormal"]]
 

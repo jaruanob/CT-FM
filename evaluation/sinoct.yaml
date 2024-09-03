@@ -4,19 +4,18 @@ _requires_:
     - "$import torch"
 
 args:
-  validate:
-    ckpt_path: $f"{@vars#save_dir}/best-v1.ckpt"
-  test: "%#validate"
-  predict: "%#validate"
+  test: 
+    ckpt_path: $f"{@vars#save_dir}/best.ckpt"
+  predict: "%#test"
 
 
 vars:
     # Run-specific variables
     name:
-    project:
 
     # Experiment settings
-    init_LR: 0.0002
+    init_LR: 0.0001
+    format: "$'monai' if 'suprem' in @vars#name or 'vista' in @vars#name else 'lighter'"
     patch_size: "$[48, 128, 128] if @vars#format == 'lighter' else [128, 128, 48]"
     pixdim: "$[5, 2, 2] if @vars#format == 'lighter' else [2, 2, 5]"
     axcodes: "$'SPL' if @vars#format == 'lighter' else 'RAS'"
@@ -26,10 +25,9 @@ vars:
     percentage: 100  # Percentage of the dataset to use
 
     # System specific variables
-    format: "$'monai' if 'suprem' in @vars#name or 'vista' in @vars#name else 'lighter'"
     dataset_dir: "/mnt/data6/ibro/Datasets/SinoCT"
-    cache_dir: '$f"/home/ibrahim/Projects/CT_FM/cache_data/{@vars#project}/{@vars#format}/{@vars#percentage}"'
-    save_dir: '$f"/home/ibrahim/Projects/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#wandb_group}/{@vars#name}"'
+    cache_dir: '$f"/home/ibrahim/Projects/CT_FM/cache_data/sinoct/{@vars#format}/{@vars#percentage}"'
+    save_dir: '$f"/home/ibrahim/Projects/CT_FM/evaluations/sinoct/checkpoints/{@vars#wandb_group}/{@vars#name}"'
 
 trainer:
     _target_: pytorch_lightning.Trainer
@@ -58,7 +56,7 @@ trainer:
           every_n_epochs: "%trainer#check_val_every_n_epoch"
     logger:
         _target_: pytorch_lightning.loggers.WandbLogger
-        project: "@vars#project"
+        project: "sinoct"
         name: "@vars#name"
         save_dir: "$@vars#save_dir.replace('checkpoints', 'logs')"
         group: "@vars#wandb_group"
@@ -66,9 +64,9 @@ trainer:
 
 system:
     _target_: lighter.LighterSystem
-    batch_size: 16
+    batch_size: 8
     pin_memory: True
-    num_workers: 16
+    num_workers: 8
 
     model:
         _target_: project.models.wrapper.TrunkHeadWrapper
@@ -113,6 +111,7 @@ system:
             - _target_: torchmetrics.classification.Specificity
               task: binary
         val: "%#train"
+        test: "%#train"
 
     datasets:
         train:
@@ -281,8 +280,7 @@ system:
                     - _target_: monai.transforms.Lambda
                       func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"]}'
                       track_meta: False
-
-        predict:
+        test:
             _target_: monai.data.Dataset
             data:
                 _target_: project.data.get_sinoct_datalist
@@ -357,7 +355,7 @@ system:
                     # --------------------------------------------------------
                     # --- Above same for train/val/test, below not ---
                     - _target_: monai.transforms.Lambda
-                      func: '$lambda x: {"input": x["image"].as_tensor(), "id": x["id"]}'
+                      func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"], "id": x["id"]}'
                       track_meta: False                 
 
     postprocessing:

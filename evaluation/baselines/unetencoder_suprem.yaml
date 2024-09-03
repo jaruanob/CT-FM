@@ -10,4 +10,4 @@ system#model#trunk:
       encoder_only: True
 
 
-system#model#model#pre_func: null
+system#model#pre_func: null
