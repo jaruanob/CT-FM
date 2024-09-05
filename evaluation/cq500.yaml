@@ -5,13 +5,15 @@ _requires_:
 
 args:
   test: 
-    ckpt_path: $f"{@vars#save_dir}/best.ckpt"
+    ckpt_path: $f"{@vars#ckpt_dir}/best.ckpt"
   predict: "%#test"
 
 
 vars:
     # Run-specific variables
     name:
+    datetime:
+    mode:
 
     # Experiment settings
     format: "$'monai' if 'suprem' in @vars#name or 'vista' in @vars#name else 'lighter'"
@@ -23,7 +25,7 @@ vars:
     embedding_dim:  # Model-specific
 
     # System specific variables
-    save_dir: '$f"/home/ibrahim/Projects/CT_FM/evaluations/sinoct/checkpoints/{@vars#wandb_group}/{@vars#name}"'
+    ckpt_dir: '$f"/home/ibrahim/Projects/CT_FM/evaluations/sinoct/checkpoints/{@vars#datetime}/{@vars#name}"'
 
 
 trainer:
@@ -37,7 +39,8 @@ trainer:
         _target_: pytorch_lightning.loggers.WandbLogger
         project: "sinoct"
         name: "@vars#name"
-        group: "@vars#wandb_group"
+        save_dir: "./.wandb"
+        group: $f"{@vars#datetime}_{@vars#mode}"
 
 
 system:

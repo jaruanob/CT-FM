@@ -5,13 +5,15 @@ _requires_:
 
 args:
   test: 
-    ckpt_path: $f"{@vars#save_dir}/best.ckpt"
+    ckpt_path: $f"{@vars#ckpt_dir}/best.ckpt"
   predict: "%#test"
 
 
 vars:
     # Run-specific variables
     name:
+    datetime:
+    mode:
 
     # Experiment settings
     init_LR: 0.0001
@@ -27,7 +29,7 @@ vars:
     # System specific variables
     dataset_dir: "/mnt/data6/ibro/Datasets/SinoCT"
     cache_dir: '$f"/home/ibrahim/Projects/CT_FM/cache_data/sinoct/{@vars#format}/{@vars#percentage}"'
-    save_dir: '$f"/home/ibrahim/Projects/CT_FM/evaluations/sinoct/checkpoints/{@vars#wandb_group}/{@vars#name}"'
+    ckpt_dir: '$f"/home/ibrahim/Projects/CT_FM/evaluations/sinoct/checkpoints/{@vars#datetime}/{@vars#name}"'
 
 trainer:
     _target_: pytorch_lightning.Trainer
@@ -46,7 +48,7 @@ trainer:
         - _target_: lighter.callbacks.LighterFreezer
           name_starts_with: ["trunk"]
         - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-          dirpath: "@vars#save_dir"
+          dirpath: "@vars#ckpt_dir"
           save_last: False
           monitor: "val/metrics/BinaryAUROC/epoch"
           mode: "max"
@@ -58,15 +60,15 @@ trainer:
         _target_: pytorch_lightning.loggers.WandbLogger
         project: "sinoct"
         name: "@vars#name"
-        save_dir: "$@vars#save_dir.replace('checkpoints', 'logs')"
-        group: "@vars#wandb_group"
+        save_dir: "./.wandb"
+        group: $f"{@vars#datetime}_{@vars#mode}"
 
 
 system:
     _target_: lighter.LighterSystem
-    batch_size: 8
+    batch_size: 16
     pin_memory: True
-    num_workers: 8
+    num_workers: 24
 
     model:
         _target_: project.models.wrapper.TrunkHeadWrapper
@@ -77,6 +79,11 @@ system:
             - _target_: torch.nn.Flatten
             - _target_: torch.nn.Linear
               in_features: "@vars#embedding_dim"
+              out_features: "$@vars#embedding_dim // 2"
+            - _target_: torch.nn.ReLU
+              inplace: True
+            - _target_: torch.nn.Linear
+              in_features: "$@vars#embedding_dim // 2"
               out_features: "@vars#num_classes"
         pre_func:  
             - "$lambda x: x[-1]"
