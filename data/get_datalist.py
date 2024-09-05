@@ -3,6 +3,8 @@ from pathlib import Path
 import pandas as pd
 from lighter.utils.misc import apply_fns
 from totalsegmentator.map_to_binary import class_map
+import requests
+import json
 
 BODY_PART_IDS = {
     "organs_v1": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
@@ -24,6 +26,30 @@ def get_ts_class_indices(group="v1"):
 def get_ts_class_labels(class_indices, group="v1"):
     mapping_dict = class_map["total_v1" if "v1" in group else "total"]
     return ["background" if idx == 0 else mapping_dict[idx] for idx in class_indices]
+
+
+def get_msd_datalist(data_dir, split, task="Task06_Lung"):
+    assert task in ["Task06_Lung", "Task03_Liver", "Task07_Pancreas", "Task08_HepaticVessel"]
+    assert split in ["train", "val", "test"]
+    data_dir = Path(data_dir)
+    task_id = task.split("_")[0]
+
+    vista_json_url = f"https://raw.githubusercontent.com/Project-MONAI/VISTA/main/vista3d/data/jsons/{task_id}_5_folds.json"
+    response = requests.get(vista_json_url)
+    vista_json_data = response.json()
+
+    match split:
+        case "train":
+            return [{"image": data_dir / task / item["image"], "label": data_dir  / task / item["label"], "id": item["image"].split(".")[0]} 
+                            for item in vista_json_data["training"] if item["fold"] != 4]
+        case "val":
+            return [{"image": data_dir / task /item["image"], "label": data_dir  / task / item["label"], "id": item["image"].split(".")[0]} 
+                            for item in vista_json_data["training"] if item["fold"] == 4]
+        case "test":
+            return [{"image": data_dir / task / item["image"], "label": data_dir / task / item["label"], "id": item["image"].split(".")[0]} 
+                            for item in vista_json_data["testing"]]
+    
+    
 
 def get_ts_datalist(data_dir, percentage=100, filter_fn=[]):
     """
