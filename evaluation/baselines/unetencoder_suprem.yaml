@@ -1,5 +1,8 @@
 vars#embedding_dim: 512
 vars#axcodes: "RAS"
+
+trainer#strategy: ddp_find_unused_parameters_true
+
 system#model#trunk:
       _target_: project.models.suprem.SuPreM_loader
       model:
@@ -10,4 +13,4 @@ system#model#trunk:
       encoder_only: True
 
 
-system#model#model#pre_func: null
+system#model#pre_func: null

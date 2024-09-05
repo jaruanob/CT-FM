@@ -2,7 +2,7 @@ export WANDB_ENTITY="aim-harvard"
 lighter fit --config=./evaluation/lits.yaml,./evaluation/baselines/random_init.yaml
 pkill -9 -f lighter
 
-lighter fit --config=./evaluation/lits.yaml,./evaluation/baselines/suprem_unet.yaml --trainer#callbacks=None
+lighter fit --config=./evaluation/lits.yaml,./evaluation/baselines/unet_suprem.yaml --trainer#callbacks=None
 pkill -9 -f lighter
 
 lighter fit --config=./evaluation/lits.yaml,./evaluation/frameworks/conrecon.yaml
