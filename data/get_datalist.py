@@ -49,7 +49,37 @@ def get_msd_datalist(data_dir, split, task="Task06_Lung"):
             return [{"image": data_dir / task / item["image"], "label": data_dir / task / item["label"], "id": item["image"].split(".")[0]} 
                             for item in vista_json_data["testing"]]
     
+
+def get_word_datalist(data_dir, split, samples=None):
+    assert split in ["train", "val", "test"]
+    data_dir = Path(data_dir)
+
+    vista_json_url = "https://raw.githubusercontent.com/Project-MONAI/VISTA/main/vista3d/data/external/WORD.json"
+    response = requests.get(vista_json_url)
+    vista_json_data = response.json()
+
+    match split:
+        case "train":
+            datalist = [{"image": data_dir / item["image"], "label": data_dir  / item["label"], "id": item["image"].split(".")[0]} 
+                            for item in vista_json_data["training"]]
+        case "val":
+            datalist = [{"image": data_dir / item["image"], "label": data_dir  / item["label"], "id": item["image"].split(".")[0]} 
+                            for item in vista_json_data["validation"]]
+        case "test":
+            datalist = [{"image": data_dir / item["image"], "label": data_dir /  item["label"], "id": item["image"].split(".")[0]} 
+                            for item in vista_json_data["testing"]]
+            
+    if samples is not None:
+        datalist = datalist[:samples]
+
+    return datalist
     
+
+def get_word_class_labels():
+    vista_json_url = "https://raw.githubusercontent.com/Project-MONAI/VISTA/main/vista3d/data/external/WORD.json"
+    response = requests.get(vista_json_url)
+    vista_json_data = response.json()
+    return vista_json_data["labels"].values()    
 
 def get_ts_datalist(data_dir, percentage=100, filter_fn=[]):
     """
