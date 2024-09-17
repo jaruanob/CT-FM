@@ -12,7 +12,7 @@ args:
 
 vars:
     init_LR: 0.0002
-    patch_size: "$[96, 160, 160] if @vars#format == 'lighter' else [160, 160, 96]"
+    patch_size: "$[96, 160, 160] if @vars#format == 'lighter' else [128, 128, 96]"
     val_max_patch_size: "$[192, 240, 240] if @vars#format == 'lighter' else [240, 240, 192]"
     axcodes: "$'SPL' if @vars#format == 'lighter' else 'RAS'"
     in_channels: 1

@@ -10,5 +10,5 @@ system#model#trunk:
         out_channels: "@vars#out_channels"
         init_filters: 48
         blocks_down: [1, 2, 2, 4, 4]
-        dsdepth: 1
+        dsdepth: 4
         norm: "instance"
