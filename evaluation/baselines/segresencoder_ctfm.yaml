@@ -1,8 +1,8 @@
 vars#embedding_dim: 512
+
 system#model#trunk:
     _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
-    ckpt_path: 
-    # ckpt_to_model_prefix: '${"_orig_mod.backbone.encoder" : "encoder"} if "recon" in @vars#name else {"_orig_mod.backbone.": "encoder"}'
+    ckpt_path:
     ckpt_to_model_prefix: '${"backbone.encoder" : ""} if "recon" in @vars#name else {"backbone.": ""}'
     model:
         _target_: monai.networks.nets.segresnet_ds.SegResEncoder
@@ -10,5 +10,3 @@ system#model#trunk:
         in_channels: "@vars#in_channels"
         init_filters: 32
         blocks_down: [1, 2, 2, 4, 4]
-
-system#model#pre_func: "$lambda x: x[-1]"

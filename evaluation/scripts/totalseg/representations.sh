@@ -6,7 +6,6 @@ export WANDB_ENTITY=aim-harvard
 ct_fm_path="/mnt/data1/CT_FM/latest_fm_checkpoints/original/epoch=449-step=225000-v1.ckpt"
 
 # ######################### Decoder-only ############################
-lighter fit --config=./evaluation/totalseg.yaml,./evaluation/baselines/suprem_unet.yaml --trainer#strategy=ddp_find_unused_parameters_true --vars#name="suprem_unet" --vars#project="totalseg" --vars#wandb_group='representations'; pkill -9 -f lighter
-lighter fit --config=./evaluation/totalseg.yaml --trainer#strategy=ddp_find_unused_parameters_true --vars#name="ct_fm_segresnet" --vars#project="totalseg" --system#model#trunk#ckpt_path=$ct_fm_path --system#model#trunk#model#dsdepth=1 --vars#wandb_group='representations'; pkill -9 -f lighter
-
-lighter fit --config=./evaluation/totalseg.yaml,./evaluation/baselines/segresnet_vista3d.yaml --trainer#strategy=ddp_find_unused_parameters_true --vars#name="vista3d" --vars#project="totalseg" --vars#wandb_group='representations'; pkill -9 -f lighter
+lighter fit --config=./evaluation/totalseg.yaml,./evaluation/baselines/unet_suprem.yaml --trainer#strategy=ddp_find_unused_parameters_true --vars#name="suprem_unet" --vars#project="totalseg" --vars#wandb_group='representations'
+lighter fit --config=./evaluation/totalseg.yaml,./evaluation/baselines/segresnet_vista3d.yaml --trainer#strategy=ddp_find_unused_parameters_true --vars#name="vista3d" --vars#project="totalseg" --vars#wandb_group='representations'
+lighter fit --config=./evaluation/totalseg.yaml,./evaluation/baselines/segresnetds_ctfm.yaml --trainer#strategy=ddp_find_unused_parameters_true --vars#name="ct_fm_segresnet" --vars#project="totalseg" --system#model#trunk#ckpt_path=$ct_fm_path --vars#wandb_group='representations'
