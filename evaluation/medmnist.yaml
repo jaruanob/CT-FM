@@ -10,15 +10,16 @@ vars:
     init_LR: 0.001
     in_channels: 1
     embedding_dim: 512
-    format: "$'suprem' if 'suprem' in @vars#name else 'lighter'"
+    wandb_group: "%#dataset"
+    format: "$'monai' if 'suprem' in @vars#name or 'vista' in @vars#name else 'lighter'"
     # Transforms the MedMNIST format to either lighter format (SPL, default) or SuPREM format (RAS)
     dataset_specific_transform: "$lambda dataset: [{'input': item[0].astype(np.float32).transpose(0, 3, 2, 1) if @vars#format == 'lighter' else np.flip(item[0].astype(np.float32), axis=[2, 1]).copy(), 'target': item[1][0]} for item in dataset]"
+    save_dir: '$f"/media/volume/CT-RATE/CT-FM/evaluations/{@vars#project}/checkpoints/{@vars#name}_{@vars#wandb_group}"'
 
 args:
   validate:
     ckpt_path: $f"{@trainer#callbacks#1#dirpath}/best.ckpt"
   test: "%#validate"
-
 
 trainer:
     _target_: pytorch_lightning.Trainer
@@ -28,8 +29,8 @@ trainer:
     accelerator: gpu
     # ---------
     devices: 1
-    strategy: ddp_find_unused_parameters_true
-    sync_batchnorm: True
+    # strategy: ddp_find_unused_parameters_true
+    # sync_batchnorm: True
     # ---------
     precision: 16-mixed
     log_every_n_steps: 10
@@ -37,14 +38,14 @@ trainer:
         _target_: pytorch_lightning.loggers.WandbLogger
         project: "@vars#project"
         name: '$f"{@vars#name}"'
-        save_dir: '$f"/mnt/data1/CT_FM/{@vars#project}/logs/{@vars#dataset}_{@vars#name}"'
+        save_dir: '$f"/media/volume/CT-RATE/CT-FM/{@vars#project}/logs/{@vars#dataset}_{@vars#name}"'
 
     callbacks:
         - _target_: lighter.callbacks.LighterFreezer
           # _orig_mod is torch.compile added notation
-          name_starts_with: ["_orig_mod.trunk"]
+          name_starts_with: ["trunk"]
         - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-          dirpath: $f"/mnt/data1/CT_FM/technical_ablation/eval/{@vars#dataset}/checkpoints/CT_FM_{@vars#name}"
+          dirpath: "@vars#save_dir"
           save_last: False
           monitor: "val/metrics/MulticlassAUROC/epoch"
           mode: "max"
@@ -54,16 +55,16 @@ trainer:
           every_n_epochs: 1
 system:
     _target_: lighter.LighterSystem
-    batch_size: 128
+    batch_size: 32
     pin_memory: True
     num_workers: 8
     model:
         _target_: project.models.wrapper.TrunkHeadWrapper
         trunk:
             _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
-            ckpt_path: /mnt/data1/CT_FM/IDC_SSL_CT/runs/checkpoints/CT_FM_Reconstruction_SegResNetDS/epoch=79-step=40000.ckpt
-            # ckpt_to_model_prefix: '${"backbone.encoder" : ""} if "recon" in @vars#name else {"backbone.": ""}'
-            ckpt_to_model_prefix: '${"_orig_mod.backbone.encoder" : ""} if "recon" in @vars#name else {"_orig_mod.backbone.": ""}'
+            ckpt_path: 
+            ckpt_to_model_prefix: '${"backbone.encoder" : ""} if "recon" in @vars#name else {"backbone.": ""}'
+            # ckpt_to_model_prefix: '${"_orig_mod.backbone.encoder" : ""} if "recon" in @vars#name else {"_orig_mod.backbone.": ""}'
             model:
                 _target_: monai.networks.nets.segresnet_ds.SegResEncoder
                 spatial_dims: 3
@@ -75,8 +76,19 @@ system:
             - _target_: torch.nn.AdaptiveAvgPool3d
               output_size: 1
             - _target_: torch.nn.Flatten
+
+            ## Mimic FC structure from paper: 
+            # https://github.com/MedMNIST/MedMNIST/blob/main/examples/getting_started.ipynb
             - _target_: torch.nn.Linear
               in_features: "@vars#embedding_dim"
+              out_features: 128
+            - _target_: torch.nn.ReLU
+            - _target_: torch.nn.Linear
+              in_features: 128
+              out_features: 128
+            - _target_: torch.nn.ReLU
+            - _target_: torch.nn.Linear
+              in_features: 128
               out_features: "@vars#num_classes"
         pre_func: 
             - "$lambda x: x[-1]"
@@ -87,14 +99,13 @@ system:
     optimizer:
         _target_: torch.optim.AdamW
         params: "$@system#model.parameters()"
-        lr: "%vars#init_LR"
+        lr: "@vars#init_LR"
         weight_decay: 1.0e-05 
 
     scheduler:
-        _target_: torch.optim.lr_scheduler.CosineAnnealingLR
+        _target_: torch.optim.lr_scheduler.MultiStepLR
         optimizer: "@system#optimizer"
-        T_max: "%trainer#max_epochs"
-        eta_min: 0
+        milestones: [50, 75]
 
     metrics:
         train:

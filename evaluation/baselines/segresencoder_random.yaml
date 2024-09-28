@@ -1,5 +1,4 @@
 vars#embedding_dim: 512
-
 system#model#trunk:
     _target_: monai.networks.nets.segresnet_ds.SegResEncoder
     spatial_dims: 3
