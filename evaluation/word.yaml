@@ -9,28 +9,21 @@ args:
   test: "%#validate"
   predict: "%#validate"
 
-
 vars:
     init_LR: 0.0002
-    patch_size: "$[96, 160, 160] if @vars#format == 'lighter' else [128, 128, 96]"
-    val_max_patch_size: "$[192, 240, 240] if @vars#format == 'lighter' else [240, 240, 192]"
+    patch_size: "$[144, 192, 192] if @vars#format == 'lighter' else [160, 160, 144]"
+    spacing: "$[3, 1, 1] if @vars#format == 'lighter' else [1, 1, 3]"
     axcodes: "$'SPL' if @vars#format == 'lighter' else 'RAS'"
     in_channels: 1
-    out_channels: "$len(@vars#class_indices)"
-    class_indices:
-      _target_: project.data.get_ts_class_indices
-      group: "@vars#group"
+    out_channels: 17
+    samples: null
     class_labels:
-      _target_: project.data.get_ts_class_labels
-      class_indices: "@vars#class_indices"
-      group: "@vars#group"
+      _target_: project.data.get_word_class_labels
     # Percentage of the dataset to use
-    percentage: 100
-    group: "v2" # Options are "v1", "organ", "cardiac", "vertebrae", "ribs", "muscles"
-    intensity_range: [-1024, 2048]
+    intensity_range: [-963, 1053]
     # System specific variables
-    dataset_dir: "/mnt/data1/TotalSegmentator/v2/processed"
-    cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}/{@vars#group}_{@vars#name}"'
+    dataset_dir: "/mnt/data1/datasets/WORD-V0.1.0"
+    cache_dir: '$f"/mnt/data1/suraj/lighter_cache/{@vars#project}/{@vars#format}/{@vars#name}"'
     format: "$'monai' if 'suprem' in @vars#name or 'vista' in @vars#name else 'lighter'"
     save_dir: '$f"/mnt/data1/CT_FM/evaluations/{@vars#project}/checkpoints/{@vars#name}_{@vars#wandb_group}"'
 
@@ -41,12 +34,12 @@ trainer:
     check_val_every_n_epoch: 5
     accelerator: gpu
     # ---------
-    devices: 4
-    strategy: ddp
-    sync_batchnorm: True
+    devices: 1
+    # strategy: ddp
+    # sync_batchnorm: True
     # ---------
     precision: 16-mixed
-    log_every_n_steps: 10
+    log_every_n_steps: 5
     logger:
         _target_: pytorch_lightning.loggers.WandbLogger
         project: "@vars#project"
@@ -72,12 +65,24 @@ trainer:
 
 system:
     _target_: lighter.LighterSystem
-    batch_size: 2
+    batch_size: 4
     pin_memory: True
     num_workers: 8
     model:
         _target_: project.models.wrapper.TrunkHeadWrapper
         trunk:
+          _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
+          ckpt_path: 
+          # ckpt_to_model_prefix: '${"_orig_mod.backbone.encoder" : "encoder"} if "recon" in @vars#name else {"_orig_mod.backbone.": "encoder"}'
+          ckpt_to_model_prefix: '${"backbone.encoder" : "encoder"} if "recon" in @vars#name else {"backbone.": "encoder"}'
+          model:
+            _target_: monai.networks.nets.SegResNetDS
+            spatial_dims: 3
+            in_channels: "@vars#in_channels"
+            out_channels: "@vars#out_channels"
+            init_filters: 32
+            blocks_down: [1, 2, 2, 4, 4]
+            dsdepth: 4
         head: null
 
     criterion:
@@ -133,11 +138,10 @@ system:
             cache_dir: '$f"{@vars#cache_dir}/train"'
             hash_transform: "$monai.data.utils.json_hashing"
             data:
-                _target_: project.data.get_ts_datalist
+                _target_: project.data.get_word_datalist
                 data_dir: "@vars#dataset_dir"
-                filter_fn: 
-                    - "$lambda x: x[x['split'] == 'train']"
-                percentage: "@vars#percentage"
+                split: "train"
+                samples: "@vars#samples"
             transform:
                 _target_: monai.transforms.Compose
                 map_items: False
@@ -151,13 +155,10 @@ system:
                     - _target_: monai.transforms.Orientationd
                       keys: ["image", "label"]
                       axcodes: "@vars#axcodes"
-                    - _target_: monai.transforms.LabelFilterd
-                      keys: label
-                      applied_labels: "@vars#class_indices"
-                    - _target_: monai.transforms.MapLabelValued
-                      keys: label
-                      orig_labels: "@vars#class_indices"
-                      target_labels: "$list(range(0, @vars#out_channels))"
+                    - _target_: monai.transforms.Spacingd
+                      keys: ["image", "label"]
+                      pixdim: "@vars#spacing"
+                      mode: ["bilinear", "nearest"]                      
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@vars#intensity_range[0]"
@@ -225,11 +226,10 @@ system:
             cache_dir: '$f"{@vars#cache_dir}/val"'
             hash_transform: "$monai.data.utils.json_hashing"
             data:
-                _target_: project.data.get_ts_datalist
+                _target_: project.data.get_word_datalist
                 data_dir: "@vars#dataset_dir"
-                filter_fn: 
-                    - "$lambda x: x[x['split'] == 'val']"
-                percentage: "@vars#percentage" 
+                split: "val"
+                samples: "@vars#samples"
             transform:
                 _target_: monai.transforms.Compose
                 transforms:
@@ -242,13 +242,10 @@ system:
                     - _target_: monai.transforms.Orientationd
                       keys: ["image", "label"]
                       axcodes: "@vars#axcodes"
-                    - _target_: monai.transforms.LabelFilterd
-                      keys: label
-                      applied_labels: "@vars#class_indices"
-                    - _target_: monai.transforms.MapLabelValued
-                      keys: label
-                      orig_labels: "@vars#class_indices"
-                      target_labels: "$list(range(0, @vars#out_channels))"
+                    - _target_: monai.transforms.Spacingd
+                      keys: ["image", "label"]
+                      pixdim: "@vars#spacing"
+                      mode: ["bilinear", "nearest"]                      
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: image
                       a_min: "$@vars#intensity_range[0]"
@@ -260,10 +257,10 @@ system:
                       keys: ["image", "label"]
                       source_key: image
                       margin: 10
-                    - _target_: monai.transforms.RandSpatialCropd
-                      keys: ["image", "label"]
-                      roi_size: "@vars#val_max_patch_size"
-                      random_size: False
+                    # - _target_: monai.transforms.RandSpatialCropd
+                    #   keys: ["image", "label"]
+                    #   roi_size: "@vars#val_max_patch_size"
+                    #   random_size: False
                     - _target_: monai.transforms.Lambda
                       func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor(), "id": x["id"]}'
                       track_meta: False
@@ -271,11 +268,9 @@ system:
         predict:
             _target_: monai.data.Dataset
             data:
-                _target_: project.data.get_ts_datalist
+                _target_: project.data.get_word_datalist
                 data_dir: "@vars#dataset_dir"
-                filter_fn: 
-                    - "$lambda x: x[x['split'] == 'test']"
-                percentage: 100
+                split: "test"
             transform:
                 _target_: monai.transforms.Compose
                 transforms:
@@ -291,13 +286,10 @@ system:
                     - _target_: monai.transforms.Orientationd
                       keys: ["input", "target"]
                       axcodes: "@vars#axcodes"
-                    - _target_: monai.transforms.LabelFilterd
-                      keys: target
-                      applied_labels: "@vars#class_indices"
-                    - _target_: monai.transforms.MapLabelValued
-                      keys: target
-                      orig_labels: "@vars#class_indices"
-                      target_labels: "$list(range(0, @vars#out_channels))"
+                    - _target_: monai.transforms.Spacingd
+                      keys: ["image", "label"]
+                      pixdim: "@vars#spacing"
+                      mode: ["bilinear", "nearest"]                      
                     - _target_: monai.transforms.ScaleIntensityRanged
                       keys: input
                       a_min: "$@vars#intensity_range[0]"
