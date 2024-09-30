@@ -204,6 +204,24 @@ system:
                       scale_range: [0.2, 0.2, 0.2]
                       cache_grid: True
                       padding_mode: constant
+                    - _target_: monai.transforms.RandGaussianSmoothd
+                      keys: image
+                      prob: 0.2
+                      sigma_x: [0.5, 1.0]
+                      sigma_y: [0.5, 1.0]
+                      sigma_z: [0.5, 1.0]
+                    - _target_: monai.transforms.RandScaleIntensityd
+                      keys: image
+                      factors: 0.3
+                      prob: 0.5
+                    - _target_: monai.transforms.RandShiftIntensityd
+                      keys: image
+                      offsets: 0.1
+                      prob: 0.5
+                    - _target_: monai.transforms.RandGaussianNoised
+                      keys: image
+                      std: 0.1
+                      prob: 0.2
                     - _target_: monai.transforms.Lambda
                       func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"]}'
                       track_meta: False
