@@ -34,7 +34,8 @@ vars:
 trainer:
     _target_: pytorch_lightning.Trainer
     benchmark: True
-    max_epochs: 40
+    max_epochs: 30
+    accumulate_grad_batches: 2
     check_val_every_n_epoch: 1
     accelerator: gpu
     # ---------
@@ -66,7 +67,7 @@ trainer:
 
 system:
     _target_: lighter.LighterSystem
-    batch_size: 16
+    batch_size: 8
     pin_memory: True
     num_workers: 24
 
@@ -74,20 +75,26 @@ system:
         _target_: project.models.wrapper.TrunkHeadWrapper
         trunk:
         head:
-            - _target_: torch.nn.AdaptiveAvgPool3d
-              output_size: 1
+            - _target_: torch.nn.AdaptiveMaxPool3d
+              output_size: [1, 2, 2]
             - _target_: torch.nn.Flatten
             - _target_: torch.nn.Linear
-              in_features: "@vars#embedding_dim"
-              out_features: "$@vars#embedding_dim // 2"
+              in_features: "$@vars#embedding_dim * 4"
+              out_features: 256
             - _target_: torch.nn.ReLU
-              inplace: True
+            - _target_: torch.nn.Dropout
+              p: 0.2
             - _target_: torch.nn.Linear
-              in_features: "$@vars#embedding_dim // 2"
+              in_features: 256
+              out_features: 128
+            - _target_: torch.nn.ReLU
+            - _target_: torch.nn.Dropout
+              p: 0.2
+            - _target_: torch.nn.Linear
+              in_features: 128
               out_features: "@vars#num_classes"
         pre_func:  
             - "$lambda x: x[-1]"
-
     criterion:
         _target_: torch.nn.BCEWithLogitsLoss
 
@@ -95,13 +102,13 @@ system:
         _target_: torch.optim.AdamW
         params: "$@system#model.parameters()"
         lr: "@vars#init_LR"
-        weight_decay: 1.0e-05 
+        weight_decay: 0.05 
 
     scheduler:
         _target_: monai.optimizers.WarmupCosineSchedule
         optimizer: "@system#optimizer"
-        warmup_steps: 0 # "$@trainer#max_epochs//10"
-        end_lr:  "$@system#optimizer#lr * 0.01"
+        warmup_steps: 0
+        end_lr:  0
         warmup_multiplier: 0.1
         t_total: "@trainer#max_epochs"
 

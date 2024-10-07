@@ -53,11 +53,23 @@ system:
         _target_: project.models.wrapper.TrunkHeadWrapper
         trunk:
         head:
-            - _target_: torch.nn.AdaptiveAvgPool3d
-              output_size: 1
+            - _target_: torch.nn.AdaptiveMaxPool3d
+              output_size: [1, 2, 2]
             - _target_: torch.nn.Flatten
             - _target_: torch.nn.Linear
-              in_features: "@vars#embedding_dim"
+              in_features: "$@vars#embedding_dim * 4"
+              out_features: 256
+            - _target_: torch.nn.ReLU
+            - _target_: torch.nn.Dropout
+              p: 0.2
+            - _target_: torch.nn.Linear
+              in_features: 256
+              out_features: 128
+            - _target_: torch.nn.ReLU
+            - _target_: torch.nn.Dropout
+              p: 0.2
+            - _target_: torch.nn.Linear
+              in_features: 128
               out_features: "@vars#num_classes"
         pre_func:  
             - "$lambda x: x[-1]"
