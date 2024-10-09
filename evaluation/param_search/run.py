@@ -62,6 +62,7 @@ def objective(trial: optuna.trial.Trial, base_config: Dict[str, Any], hyperparam
         parser = get_lighter_parser(trial_config)
         system = parser.get_parsed_content("system")
         trainer = parser.get_parsed_content("trainer")
+        trainer.callbacks.append(optuna.integration.PyTorchLightningPruningCallback(trial, monitor=monitor))
 
     trainer.fit(system)
     return trainer.callback_metrics[monitor].item()
@@ -86,9 +87,11 @@ def main():
     monitor = hyperparam_config.pop("monitor")
     direction = hyperparam_config.pop("direction", "maximize")
     n_trials = hyperparam_config.pop("n_trials", 100)
+    pruning = hyperparam_config.pop("pruning", False)
 
     # Create and run Optuna study
-    study = optuna.create_study(direction=direction)
+    pruner = optuna.pruners.MedianPruner() if pruning else optuna.pruners.NopPruner()
+    study = optuna.create_study(direction=direction, pruner=pruner)
     study.optimize(
         partial(objective, base_config=base_config, hyperparam_dict=hyperparam_config, monitor=monitor),
         n_trials=n_trials
