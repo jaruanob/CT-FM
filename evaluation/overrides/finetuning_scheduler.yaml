@@ -3,6 +3,7 @@ trainer#callbacks:
   - _target_: finetuning_scheduler.FTSEarlyStopping
     monitor: "val/metrics/MultilabelAUROC/epoch"
     mode: "max"
+    patience: 5
   - _target_: finetuning_scheduler.FTSCheckpoint
     dirpath: "@vars#save_dir"
     monitor: "val/metrics/MultilabelAUROC/epoch"
