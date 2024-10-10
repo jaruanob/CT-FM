@@ -1,0 +1,29 @@
+base:
+  config:
+    - "./evaluation/radchest.yaml"
+    - "./evaluation/baselines/segresencoder_ctfm.yaml"
+  vars#name: "ctfm" # This will be suffixed with a unique ID for the trial
+  vars#project: "radchest_hyperparam_search"
+  vars#wandb_group: "param_search"
+  trainer#limit_train_batches: 30
+  trainer#strategy: "auto"
+
+hyperparam_config:
+  storage: "sqlite:///db.sqlite3"
+  n_trials: 25
+  pruning: True
+  monitor: "val/metrics/MultilabelAUROC/epoch"
+  direction: maximize
+  system#optimizer#lr:
+    type: "float"
+    range: [0.00001, 0.001]
+    log: True
+  system#optimizer#weight_decay:
+    type: "float"
+    range: [0.00001, 0.001]
+    log: True
+  system#scheduler#warmup_steps:
+    type: "float"
+    range: [1, 10]
+      
+  
