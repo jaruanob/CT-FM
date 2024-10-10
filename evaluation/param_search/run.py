@@ -3,6 +3,7 @@ import warnings
 from functools import partial
 from typing import Dict, Any
 
+import wandb
 import optuna
 from monai.bundle.config_parser import ConfigParser
 from lighter.utils.runner import parse_config
@@ -65,6 +66,10 @@ def objective(trial: optuna.trial.Trial, base_config: Dict[str, Any], hyperparam
         trainer.callbacks.append(optuna.integration.PyTorchLightningPruningCallback(trial, monitor=monitor))
 
     trainer.fit(system)
+    # Need to finish the wandb run before the next one
+    wandb.finish()
+
+    # Get the final value of the monitored metric
     return trainer.callback_metrics[monitor].item()
 
 def main():
@@ -88,10 +93,12 @@ def main():
     direction = hyperparam_config.pop("direction", "maximize")
     n_trials = hyperparam_config.pop("n_trials", 100)
     pruning = hyperparam_config.pop("pruning", False)
+    storage = hyperparam_config.pop("storage", None)
+    study_name = base_config.get("vars#name")
 
     # Create and run Optuna study
     pruner = optuna.pruners.MedianPruner() if pruning else optuna.pruners.NopPruner()
-    study = optuna.create_study(direction=direction, pruner=pruner)
+    study = optuna.create_study(direction=direction, pruner=pruner, storage=storage, study_name=study_name)
     study.optimize(
         partial(objective, base_config=base_config, hyperparam_dict=hyperparam_config, monitor=monitor),
         n_trials=n_trials

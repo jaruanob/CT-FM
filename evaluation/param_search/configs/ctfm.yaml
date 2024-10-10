@@ -1,7 +1,7 @@
 base:
   config:
     - "./evaluation/radchest.yaml"
-    - "./evaluation/baselines/segresencoder_random.yaml"
+    - "./evaluation/baselines/segresencoder_ctfm.yaml"
   vars#name: "baseline" # This will be suffixed with a unique ID for the trial
   vars#project: "radchest_hyperparam_search"
   vars#wandb_group: "param_search"
@@ -9,6 +9,7 @@ base:
   trainer#strategy: "auto"
 
 hyperparam_config:
+  storage: "sqlite:///db.sqlite3"
   n_trials: 25
   pruning: True
   monitor: "val/metrics/MultilabelAUROC/epoch"
@@ -24,3 +25,5 @@ hyperparam_config:
   system#scheduler#warmup_steps:
     type: "float"
     range: [1, 10]
+      
+  
