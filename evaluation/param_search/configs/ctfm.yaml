@@ -2,7 +2,7 @@ base:
   config:
     - "./evaluation/radchest.yaml"
     - "./evaluation/baselines/segresencoder_ctfm.yaml"
-  vars#name: "baseline" # This will be suffixed with a unique ID for the trial
+  vars#name: "ctfm" # This will be suffixed with a unique ID for the trial
   vars#project: "radchest_hyperparam_search"
   vars#wandb_group: "param_search"
   trainer#limit_train_batches: 30
