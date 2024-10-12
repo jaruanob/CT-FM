@@ -64,6 +64,7 @@ def objective(trial: optuna.trial.Trial, base_config: Dict[str, Any], hyperparam
         system = parser.get_parsed_content("system")
         trainer = parser.get_parsed_content("trainer")
         trainer.callbacks.append(optuna.integration.PyTorchLightningPruningCallback(trial, monitor=monitor))
+        trainer.logger.log_hyperparams(parser.config)
 
     trainer.fit(system)
     # Need to finish the wandb run before the next one
@@ -76,13 +77,13 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Run hyperparameter optimization")
-    parser.add_argument("config", type=str, help="Path to the configuration file")
+    parser.add_argument("config", type=str, nargs='+', help="Path to one or more configuration files")
     args = parser.parse_args()
 
     # Load meta-configuration
     meta_config = ConfigParser().load_config_files(args.config)
 
-    hyperparam_config = meta_config["hyperparam_config"]
+    hyperparam_config = meta_config["hyperparams"]
     base_config = meta_config["base"]
 
     # Ensure required keys are present in hyperparam_config
@@ -98,7 +99,7 @@ def main():
 
     # Create and run Optuna study
     pruner = optuna.pruners.MedianPruner() if pruning else optuna.pruners.NopPruner()
-    study = optuna.create_study(direction=direction, pruner=pruner, storage=storage, study_name=study_name)
+    study = optuna.create_study(direction=direction, pruner=pruner, storage=storage, study_name=study_name, load_if_exists=True)
     study.optimize(
         partial(objective, base_config=base_config, hyperparam_dict=hyperparam_config, monitor=monitor),
         n_trials=n_trials
