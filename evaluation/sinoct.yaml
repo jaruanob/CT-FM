@@ -57,6 +57,9 @@ trainer:
           auto_insert_metric_name: False
           verbose: True
           every_n_epochs: "%trainer#check_val_every_n_epoch"
+        - _target_: lighter.callbacks.LighterTableWriter
+          path: $f"{@vars#mode}_{@vars#name}.csv"
+          writer: "$lambda tensor: torch.sigmoid(tensor).item()"
     logger:
         _target_: pytorch_lightning.loggers.WandbLogger
         project: "sinoct"
@@ -388,7 +391,8 @@ system:
                     # --- Above same for train/val/test, below not ---
                     - _target_: monai.transforms.Lambda
                       func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"], "id": x["id"]}'
-                      track_meta: False                 
+                      track_meta: False
+        predict: "%#test"
 
     postprocessing:
         criterion:
