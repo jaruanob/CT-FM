@@ -1,8 +1,3 @@
-vars#embedding_dim: 512
-vars#axcodes: "RAS"
-
-trainer#strategy: ddp_find_unused_parameters_true
-
 system#model#trunk:
       _target_: project.models.suprem.SuPreM_loader
       model:
@@ -11,6 +6,5 @@ system#model#trunk:
       ckpt_path: "/mnt/data1/CT_FM/baselines/SuPreM_UNet/supervised_suprem_unet_2100.pth"
       decoder: False
       encoder_only: True
-
 
 system#model#pre_func: null

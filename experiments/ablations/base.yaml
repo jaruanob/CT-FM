@@ -2,7 +2,7 @@ vars:
     NUM_FTRS_BY_BACKBONE: {"SegResNetDS": 512, "ResNet50x2": 4096}
     SPACING: [3, 1, 1]
 
-project: .
+project: "/home/suraj/Repositories/lighter-ct-fm"
 
 _requires_:
     - "$import monai"

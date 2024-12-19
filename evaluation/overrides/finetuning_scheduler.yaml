@@ -1,10 +1,11 @@
+vars#init_LR: 0.001
 trainer#callbacks:
   - _target_: finetuning_scheduler.FinetuningScheduler
+    ft_schedule: ./evaluation/param_search/configs/segresnet_fit_schedule.yaml
   - _target_: finetuning_scheduler.FTSEarlyStopping
-    monitor: "val/metrics/MultilabelAUROC/epoch"
-    mode: "max"
-    patience: 5
+    monitor: "val/loss/epoch"
+    mode: "min"
   - _target_: finetuning_scheduler.FTSCheckpoint
     dirpath: "@vars#save_dir"
-    monitor: "val/metrics/MultilabelAUROC/epoch"
-    mode: "max"
+    monitor: "val/loss/epoch"
+    mode: "min"

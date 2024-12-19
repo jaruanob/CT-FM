@@ -132,3 +132,15 @@ logs/
 **/*.ckpt
 prototyping.ipynb
 .wandb/
+wandb/latest-run
+wandb/settings
+wandb/run-20241021_132235-l1t6exsj/run-l1t6exsj.wandb
+wandb/run-20241021_132235-l1t6exsj/files/conda-environment.yaml
+wandb/run-20241021_132235-l1t6exsj/files/config.yaml
+wandb/run-20241021_132235-l1t6exsj/files/diff.patch
+wandb/run-20241021_132235-l1t6exsj/files/requirements.txt
+wandb/run-20241021_132235-l1t6exsj/files/wandb-metadata.json
+wandb/run-20241021_132235-l1t6exsj/files/wandb-summary.json
+*.pt
+*.pkl
+*.torch

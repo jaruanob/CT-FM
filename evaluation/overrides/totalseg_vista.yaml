@@ -6,5 +6,4 @@ system#datasets#val#data#filter_fn:
                       - "$lambda x: x[x['vista_split'] == 'val']"
 system#datasets#predict#data#filter_fn:
                       - "$lambda x: x[x['vista_split'] == 'test']"
-trainer#callbacks#0#until_epoch: 0
 trainer#max_epochs: 300
