@@ -1,7 +1,7 @@
 import torch
 
-def SuPreM_loader(model, ckpt_path, decoder=True, encoder_only=False):
-    model_dict = torch.load(ckpt_path)['net']
+def SuPreM_loader(model, ckpt_path, decoder=True, encoder_only=False, device=torch.device('cuda:0')):
+    model_dict = torch.load(ckpt_path, map_location=device)['net']
     store_dict = model.state_dict()
     amount = 0
     if model.__class__.__name__ == "SegResNet":

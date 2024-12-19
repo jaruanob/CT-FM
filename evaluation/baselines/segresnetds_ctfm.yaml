@@ -1,7 +1,7 @@
 system#model#trunk:
     _target_: lighter.utils.model.adjust_prefix_and_load_state_dict
-    ckpt_path: 
-    ckpt_to_model_prefix: '${"backbone.encoder" : "encoder"} if "recon" in @vars#name else {"backbone.": "encoder"}'
+    ckpt_path: "/mnt/data1/CT_FM/latest_fm_checkpoints/original/epoch=449-step=225000-v1.ckpt"
+    ckpt_to_model_prefix: '${"_orig_mod.backbone.encoder" : "encoder"} if "recon" in @vars#name else {"_orig_mod.backbone.": "encoder"}'
     model:
         _target_: monai.networks.nets.SegResNetDS
         spatial_dims: 3

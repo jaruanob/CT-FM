@@ -20,14 +20,11 @@ hyperparams:
     log: True
   system#optimizer#weight_decay:
     type: "float"
-    range: [0.00001, 0.001]
+    range: [0.00001, 0.05]
     log: True
   system#scheduler#warmup_steps:
     type: "int"
     range: [1, 10]
-  trainer#callbacks#0#until_epoch:
-    type: "int"
-    range: [0, 25]
   vars#pool_size:
     type: "categorical"
     choices: [1, 2]

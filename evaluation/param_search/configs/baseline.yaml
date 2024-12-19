@@ -18,7 +18,7 @@ hyperparams:
     log: True
   system#optimizer#weight_decay:
     type: "float"
-    range: [0.00001, 0.001]
+    range: [0.00001, 0.05]
     log: True
   system#scheduler#warmup_steps:
     type: "int"

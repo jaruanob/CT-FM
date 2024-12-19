@@ -16,7 +16,7 @@ BODY_PART_IDS = {
     "ribs_v1": [58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81],
     "merlin_v2": [6, 5, 4, 3, 2, 1, 22, 32, 31, 30, 29, 28, 27, 26, 25, 21, 20, 19, 18, 7],
     "v1": list(range(1, 105)),
-    "v2": list(range(1, 118))
+    "v2": list(range(1, 118)),
 }
 
 
@@ -97,8 +97,8 @@ def get_ts_datalist(data_dir, percentage=100, filter_fn=[]):
     images = [data_dir / id / "ct.nii.gz" for id in ids]
     labels = [data_dir / id / "label.nii.gz" for id in ids]
 
-    images = images[: math.ceil(len(images) * percentage / 100)]
-    labels = labels[: math.ceil(len(labels) * percentage / 100)]
+    images = images[:round(len(images) * percentage / 100)]
+    labels = labels[:round(len(labels) * percentage / 100)]
 
     print(f"Number of images: {len(images)}")
 
