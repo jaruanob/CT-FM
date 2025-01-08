@@ -6,8 +6,8 @@ export WANDB_ENTITY=aim-harvard
 # ct_fm_path="/mnt/data1/CT_FM/latest_fm_checkpoints/ct_fm_simclr_segresnetds_22_jul_2024.ckpt"
 
 # ######################### Groups - Merlin V2 ############################
-lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_merlin.yaml,./evaluation/baselines/segresnetds_random.yaml --vars#name="baseline" --vars#project="totalseg" --vars#wandb_group='merlin_V2'
-lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_merlin.yaml,./evaluation/baselines/segresnetds_ctfm.yaml --system#model#trunk#ckpt_path="/mnt/data1/CT_FM/latest_fm_checkpoints/original/epoch=449-step=225000-v1.ckpt" --vars#name="ct_fm" --vars#project="totalseg" --vars#wandb_group='merlin_V2'
+lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_merlin.yaml,./evaluation/baselines/segresnetds_random.yaml --vars#name="baseline" --vars#project="totalseg" --vars#wandb_group='merlin_V2' --trainer#callbacks#0#until_epoch=0
+lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_merlin.yaml,./evaluation/baselines/segresnetds_ctfm.yaml --system#model#trunk#ckpt_path="/mnt/data1/CT_FM/latest_fm_checkpoints/original/epoch=449-step=225000-v1.ckpt" --vars#name="ct_fm" --vars#project="totalseg" --vars#wandb_group='merlin_V2' --trainer#callbacks#0#until_epoch=0
 
 
 ### Predict 

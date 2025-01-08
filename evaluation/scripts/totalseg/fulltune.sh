@@ -7,5 +7,5 @@ ct_fm_path="/mnt/data1/CT_FM/latest_fm_checkpoints/original/epoch=449-step=22500
 
 # ######################### V2 (VISTA3D split) ############################
 lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_vista.yaml,./evaluation/baselines/unet_suprem.yaml --trainer#callbacks#0#until_epoch=0 --vars#name="suprem_unet" --vars#project="totalseg" --vars#wandb_group='vista_v2'
-lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_vista.yaml,./evaluation/baselines/segresnetds_ctfm.yaml --vars#name="ct_fm" --vars#project="totalseg" --system#model#trunk#ckpt_path=$ct_fm_path --vars#wandb_group='vista_v2'
-lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_vista.yaml,./evaluation/baselines/segresnetds_random.yaml --vars#name="baseline" --vars#project="totalseg" --vars#wandb_group='vista_v2'
+lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_vista.yaml,./evaluation/baselines/segresnetds_ctfm.yaml --trainer#callbacks#0#until_epoch=0 --trainer#callbacks#0#until_epoch=0 --vars#name="ct_fm" --vars#project="totalseg" --system#model#trunk#ckpt_path=$ct_fm_path --vars#wandb_group='vista_v2'
+lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_vista.yaml,./evaluation/baselines/segresnetds_random.yaml --trainer#callbacks#0#until_epoch=0 --trainer#callbacks#0#until_epoch=0 --vars#name="baseline" --vars#project="totalseg" --vars#wandb_group='vista_v2'
