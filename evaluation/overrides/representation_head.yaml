@@ -1,0 +1,6 @@
+system#model#head:
+      _target_: project.models.heads.seg_head.SegDecoder
+      embedding_dim: "@vars#embedding_dim"
+      projection_dim: 256
+      out_channels: "@vars#out_channels"
+      n_up: 5

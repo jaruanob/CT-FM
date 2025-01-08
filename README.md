@@ -60,42 +60,67 @@ CT-FM is pre-trained using a modified SimCLR framework for self-supervised learn
 3.  **Retrieval:**
     *   Embeddings generated for training data were compared using cosine similarity for retrieval tasks.
 
-## Discussion
-
-CT-FM's success highlights the importance of:
-
-*   **Self-supervised learning for 3D imaging:** Excelling in tasks even in low-data regimes.
-*   **Interpretable Embeddings:** Embeddings exhibit anatomical clustering, aiding semantic understanding and building trust for clinical use.
-*   **Open Collaboration:** The release of model weights and data encourages further innovation.
-
-Challenges include:
-
-*   High computational requirements for pretraining and fine-tuning.
-*   Potential to expand applicability to modalities like MRI or PET.
 
 ## Applications for Code Documentation
 
 This section provides guidance on how to use the code for various tasks.
 
-### Segmentation
+The structure of the repository is as below,
+```bash
+├── README.md
+├── __init__.py
+├── callbacks/
+├── data/
+├── evaluation/
+├── experiments/
+│   ├── ablations/
+│   ├── fm/
+│   └── scripts/
+├── loss/
+├── meta-evaluation/
+├── metrics/
+├── models/
+├── notebooks/
+├── semantic-search-app/
+├── transforms/
+```
 
-*   **Framework:** MONAI’s Auto3DSeg.
-*   **Model:** SegResNet with decoder integration for fine-tuning.
-*   **Key Hyperparameters:** Learning rate = 0.0002, batch size = 8, epochs = 300.
+The `experiments/` directory contains the following subdirectories:
+*   `ablations/`: Contains code for ablation studies.
+*   `fm/`: Contains code for the foundation model pre-training.
+*   `scripts/`: Contains scripts for running experiments.
 
-### Classification
+The `experiments/ablations/` directory contains configuration files for ablation studies.
+    *   `base.yaml`: Defines the base configuration for all ablation experiments, including the trainer, system, optimizer, scheduler, and datasets.
+    *   `backbones/`: Contains configuration files for different backbones used in the ablation studies.
+        *   `resnet50x2.yaml`: Configuration for a ResNet50x2 backbone.
+        *   `segresenc.yaml`: Configuration for a SegResNet encoder backbone.
+        *   `segresnetds_w_embedding.yaml`: Configuration for a SegResNetDS backbone with embedding.
+        *   `segresnetds.yaml`: Configuration for a SegResNetDS backbone.
+    *   `frameworks/`: Contains configuration files for different self-supervised learning frameworks used in the ablation studies.
+        *   `conrecon.yaml`: Configuration for the ConRecon framework.
+        *   `reconstruction.yaml`: Configuration for a reconstruction-based framework.
+        *   `simclr_intrasample.yaml`: Configuration for the SimCLR framework with intra-sample contrastive learning.
+        *   `simclr.yaml`: Configuration for the SimCLR framework.
+        *   `simsiam_intrasample.yaml`: Configuration for the SimSiam framework with intra-sample contrastive learning.
+        *   `simsiam.yaml`: Configuration for the SimSiam framework.
+        *   `vicreg_intrasample.yaml`: Configuration for the VICReg framework with intra-sample contrastive learning.
+        *   `vicreg.yaml`: Configuration for the VICReg framework.
+        *   `vicregl.yaml`: Configuration for the VICRegL framework.
 
-*   **Model Architecture:** Adaptive pooling + dense layers for binary classification.
-*   **Preprocessing:** Windowing levels specific to CT scan features (blood, subdural, stroke, bone).
+The `experiments/fm/` directory contains configuration files for pre-training the foundation model.
+    *   `base.yaml`: Defines the base configuration for pre-training, including the trainer, system, optimizer, scheduler, and datasets.
+    *   `backbones/`: Contains configuration files for different backbones used in pre-training.
+        *   `segresenc.yaml`: Configuration for a SegResNet encoder backbone.
+        *   `segresnetds_w_embedding.yaml`: Configuration for a SegResNetDS backbone with embedding.
+    *   `frameworks/`: Contains configuration files for different self-supervised learning frameworks used in pre-training.
+        *   `conrecon.yaml`: Configuration for the ConRecon framework.
+        *   `simclr.yaml`: Configuration for the SimCLR framework.
 
-### Retrieval
+The `experiments/scripts/` directory contains scripts for running experiments.
+    *   `ablate_technical.sh`: A shell script for running ablation experiments.
 
-*   **Embedding Generation:** Patch-wise for lesion retrieval, aggregated for organ-level tasks.
-*   **Similarity Metric:** Cosine similarity for matching.
 
-### Pretraining
 
-*   **Framework:** SimCLR with modifications for intra-sample contrastive learning.
-*   **Key Enhancements:** Patch-based training for better spatial semantics.
 
 This documentation provides a comprehensive overview of the CT-FM project. For more detailed information, please refer to the source code and the original research paper.
