@@ -9,33 +9,33 @@ import monai
 class EmbeddingModel(torch.nn.Module):
     def __init__(self):
         super().__init__()
-        # self.model = adjust_prefix_and_load_state_dict(
-        #             ckpt_path="/mnt/data1/CT_FM/latest_fm_checkpoints/original/epoch=449-step=225000-v1.ckpt",
-        #             ckpt_to_model_prefix={"backbone.": ""},
-        #             model=monai.networks.nets.segresnet_ds.SegResEncoder(
-        #                 spatial_dims=3,
-        #                 in_channels=1,
-        #                 init_filters=32,
-        #                 blocks_down=[1, 2, 2, 4, 4],
-        #                 head_module=lambda x: x[-1]
-        #             ),
+        self.model = adjust_prefix_and_load_state_dict(
+                    ckpt_path="/mnt/data1/CT_FM/latest_fm_checkpoints/original/epoch=449-step=225000-v1.ckpt",
+                    ckpt_to_model_prefix={"backbone.": ""},
+                    model=monai.networks.nets.segresnet_ds.SegResEncoder(
+                        spatial_dims=3,
+                        in_channels=1,
+                        init_filters=32,
+                        blocks_down=[1, 2, 2, 4, 4],
+                        head_module=lambda x: x[-1]
+                    ),
                     
-        #     )
+            )
         
-        import sys
-        sys.path.append('/home/suraj/Repositories/lighter-ct-fm')
+        # import sys
+        # sys.path.append('/home/suraj/Repositories/lighter-ct-fm')
 
-        from models.suprem import SuPreM_loader
-        from models.backbones.unet3d import UNet3D
+        # from models.suprem import SuPreM_loader
+        # from models.backbones.unet3d import UNet3D
 
-        self.model = SuPreM_loader(
-            model=UNet3D(
-                n_class=10
-            ),
-            ckpt_path="/mnt/data1/CT_FM/baselines/SuPreM_UNet/supervised_suprem_unet_2100.pth",
-            decoder=False,
-            encoder_only=True
-        )
+        # self.model = SuPreM_loader(
+        #     model=UNet3D(
+        #         n_class=10
+        #     ),
+        #     ckpt_path="/mnt/data1/CT_FM/baselines/SuPreM_UNet/supervised_suprem_unet_2100.pth",
+        #     decoder=False,
+        #     encoder_only=True
+        # )
 
         self.avgpool = torch.nn.AdaptiveAvgPool3d((1, 1, 1))
         self.flatten = torch.nn.Flatten(start_dim=1)
