@@ -1,7 +1,14 @@
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97-Models-yellow)](https://huggingface.co/project-lighter)
+[![Paper](https://img.shields.io/badge/Paper-arXiv-red)](https://arxiv.org/abs/2501.09001)
+
 # CT-FM: A 3D Image-Based Foundation Model for Radiological Tasks
 
-## Introduction
 
+
+![CT-FM Overview](./assets/Figure1.png)
+
+
+## Introduction
 This repository contains the code and resources for CT-FM, a 3D image-based pre-trained foundation model designed for various radiological tasks. CT-FM is trained using self-supervised learning (SSL) on a large dataset of 148,000 CT scans. This model aims to address a range of tasks, including whole-body segmentation, tumor segmentation, head CT triage, and medical image retrieval. This work builds upon previous efforts in radiological AI, shifting from task-specific expert models to unified foundation models for broader adaptability and efficiency.
 
 ## Key Innovations
@@ -46,81 +53,18 @@ CT-FM is pre-trained using a modified SimCLR framework for self-supervised learn
 *   **Intra-sample Contrastive Learning:** Focuses on patches within the same sample to learn spatial semantics.
 *   **Augmentation Strategies:** Utilizes augmentations like random cropping, histogram shifting, and intensity scaling.
 *   **Pretraining Details:** Pretrained for 500 epochs on 148,000 CT scans, selecting the best checkpoint at epoch 449.
+*  **Architecture Details:** Uses a convolutional vision encoder, SegResEncoder with 77M params
 
 ### Fine-tuning for Downstream Tasks
 
 1.  **Segmentation:**
-    *   Utilizes the SegResNet architecture with Dice score and cross-entropy loss.
+    *   Plugs the pretrained SegResEncoder into SegResNetDS and trains with Dice score and cross-entropy loss.
     *   Trained for 300 epochs with augmentations like affine transformations and Gaussian noise.
+    *   Works both with project-lighter pipelines as well as established frameworks like Auto3DSeg
 
 2.  **Classification:**
-    *   Implemented using SegResNet or UNetEncoder as the backbone, optimized with Binary Cross-Entropy loss.
+    *   Implemented using SegResEncoder as the backbone + MLP, optimized with Binary Cross-Entropy loss.
     *   Preprocessing includes windowing levels specific to CT scan features (blood, subdural, stroke, bone).
 
 3.  **Retrieval:**
     *   Embeddings generated for training data were compared using cosine similarity for retrieval tasks.
-
-
-## Applications for Code Documentation
-
-This section provides guidance on how to use the code for various tasks.
-
-The structure of the repository is as below,
-```bash
-├── README.md
-├── __init__.py
-├── callbacks/
-├── data/
-├── evaluation/
-├── experiments/
-│   ├── ablations/
-│   ├── fm/
-│   └── scripts/
-├── loss/
-├── meta-evaluation/
-├── metrics/
-├── models/
-├── notebooks/
-├── semantic-search-app/
-├── transforms/
-```
-
-The `experiments/` directory contains the following subdirectories:
-*   `ablations/`: Contains code for ablation studies.
-*   `fm/`: Contains code for the foundation model pre-training.
-*   `scripts/`: Contains scripts for running experiments.
-
-The `experiments/ablations/` directory contains configuration files for ablation studies.
-    *   `base.yaml`: Defines the base configuration for all ablation experiments, including the trainer, system, optimizer, scheduler, and datasets.
-    *   `backbones/`: Contains configuration files for different backbones used in the ablation studies.
-        *   `resnet50x2.yaml`: Configuration for a ResNet50x2 backbone.
-        *   `segresenc.yaml`: Configuration for a SegResNet encoder backbone.
-        *   `segresnetds_w_embedding.yaml`: Configuration for a SegResNetDS backbone with embedding.
-        *   `segresnetds.yaml`: Configuration for a SegResNetDS backbone.
-    *   `frameworks/`: Contains configuration files for different self-supervised learning frameworks used in the ablation studies.
-        *   `conrecon.yaml`: Configuration for the ConRecon framework.
-        *   `reconstruction.yaml`: Configuration for a reconstruction-based framework.
-        *   `simclr_intrasample.yaml`: Configuration for the SimCLR framework with intra-sample contrastive learning.
-        *   `simclr.yaml`: Configuration for the SimCLR framework.
-        *   `simsiam_intrasample.yaml`: Configuration for the SimSiam framework with intra-sample contrastive learning.
-        *   `simsiam.yaml`: Configuration for the SimSiam framework.
-        *   `vicreg_intrasample.yaml`: Configuration for the VICReg framework with intra-sample contrastive learning.
-        *   `vicreg.yaml`: Configuration for the VICReg framework.
-        *   `vicregl.yaml`: Configuration for the VICRegL framework.
-
-The `experiments/fm/` directory contains configuration files for pre-training the foundation model.
-    *   `base.yaml`: Defines the base configuration for pre-training, including the trainer, system, optimizer, scheduler, and datasets.
-    *   `backbones/`: Contains configuration files for different backbones used in pre-training.
-        *   `segresenc.yaml`: Configuration for a SegResNet encoder backbone.
-        *   `segresnetds_w_embedding.yaml`: Configuration for a SegResNetDS backbone with embedding.
-    *   `frameworks/`: Contains configuration files for different self-supervised learning frameworks used in pre-training.
-        *   `conrecon.yaml`: Configuration for the ConRecon framework.
-        *   `simclr.yaml`: Configuration for the SimCLR framework.
-
-The `experiments/scripts/` directory contains scripts for running experiments.
-    *   `ablate_technical.sh`: A shell script for running ablation experiments.
-
-
-
-
-This documentation provides a comprehensive overview of the CT-FM project. For more detailed information, please refer to the source code and the original research paper.
