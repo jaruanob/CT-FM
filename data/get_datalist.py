@@ -2,11 +2,10 @@ import math
 from pathlib import Path
 import random
 import pandas as pd
-from lighter.utils.misc import apply_fns
-from totalsegmentator.map_to_binary import class_map
+from .ts import class_map
 import requests
+from ..utils import apply_fns
 import json
-
 
 BODY_PART_IDS = {
     "organs_v1": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],

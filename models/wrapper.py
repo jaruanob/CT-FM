@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
-
-from lighter.utils.misc import apply_fns
+from ..utils import apply_fns
 
 class TrunkHeadWrapper(nn.Module):
     def __init__(self, trunk, head, pre_func=None):
