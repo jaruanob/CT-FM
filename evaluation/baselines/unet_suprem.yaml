@@ -7,7 +7,7 @@ system#model:
       decoder: False
 
 trainer#callbacks#0:
-        _target_: lighter.callbacks.LighterFreezer
+        _target_: lighter.callbacks.Freezer
         # _orig_mod is torch.compile added notation
         name_starts_with: ["down_tr"]
 
