@@ -1,12 +1,7 @@
-# args:
-#     fit:
-#         ckpt_path: last
-
+project: .
 vars:
     NUM_FTRS_BY_BACKBONE: {"SegResNetDS": 512, "ResNet50x2": 4096}
     SPACING: [3, 1, 1]
-
-project: .
 
 trainer:
     _target_: pytorch_lightning.Trainer
@@ -24,27 +19,24 @@ trainer:
         _target_: pytorch_lightning.loggers.WandbLogger
         name: $f"CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
         project: CT_FM
-        save_dir: $f"/mnt/data16/ibro/IDC_SSL_CT/runs/fm/logs/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
+        save_dir: $f"/mnt/ssd1/ibro/IDC_SSL_CT/runs/fm/logs/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
   
     callbacks:
         # Save the last checkpoint
         - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-          dirpath: $f"/mnt/data16/ibro/IDC_SSL_CT/runs/fm/checkpoints/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
+          dirpath: $f"/mnt/ssd1/ibro/IDC_SSL_CT/runs/fm/checkpoints/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
           save_last: True
           verbose: True
           every_n_epochs: 1
         # Save a checkpoint every 10 epochs
         - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-          dirpath: $f"/mnt/data16/ibro/IDC_SSL_CT/runs/fm/checkpoints/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
+          dirpath: $f"/mnt/ssd1/ibro/IDC_SSL_CT/runs/fm/checkpoints/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
           save_last: False
           save_top_k: -1
           verbose: True
           every_n_epochs: 10
 system:
-    _target_: lighter.LighterSystem
-    batch_size: 4
-    pin_memory: True
-    num_workers: 5
+    _target_: lighter.System
 
     model:
 
@@ -61,11 +53,27 @@ system:
         warmup_steps: 10  # First 10 epochs
         t_total: $@trainer#max_epochs
   
-    datasets:
+    dataloaders:
         train:
-            _target_: project.data.safe_dataset.SafeDataset
+            _target_: torch.utils.data.DataLoader
+            batch_size: 4
+            pin_memory: True
+            num_workers: 5        
             dataset:
-                _target_: monai.data.Dataset
-                data: "$pickle.load(open('/mnt/data16/ibro/IDC_SSL_CT/dataset_list.pkl', 'rb'))"
-                _requires_: "$import pickle"
-                transform:
+                _target_: project.data.safe_dataset.SafeDataset
+                dataset:
+                    _target_: monai.data.Dataset
+                    data: "$pickle.load(open('/mnt/ssd1/ibro/IDC_SSL_CT/dataset_list.pkl', 'rb'))"
+                    _requires_: "$import pickle"
+                    transform:
+
+
+    adapters:
+        train:
+            batch:
+                _target_: lighter.adapters.BatchAdapter
+                input_accessor: "input"
+
+            criterion:
+                _target_: lighter.adapters.CriterionAdapter
+                pred_argument: 0

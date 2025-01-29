@@ -8,17 +8,17 @@ vars#NUM_CONTRASTIVE_CROPS: 15
 system#model: 
     _target_: torch.compile
     model:
-      _target_: project.models.frameworks.simclr.SimCLR
+      _target_: project.models.frameworks.SimCLR
       num_ftrs: '$@vars#NUM_FTRS_BY_BACKBONE[@vars#BACKBONE_NAME]'
       backbone:
 
 
 system#criterion:
-    _target_: project.loss.intrasample_ntxent_loss.IntraSampleNTXEntLoss
+    _target_: project.loss.IntraSampleNTXEntLoss
     temperature: 0.1
 
 
-system#datasets#train#dataset#transform:
+system#dataloaders#train#dataset#dataset#transform:
     # Parent torchvision Compose so that the monai Compose children can have different map_items.
     # A parent monai Compose would force all children to have its map_items.
     _target_: torchvision.transforms.Compose

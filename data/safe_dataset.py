@@ -4,8 +4,7 @@ import torch
 from torch.utils.data import Dataset
 from loguru import logger
 
-from lighter.utils.misc import apply_fns
-
+from ..utils import apply_fns
 
 class SafeDataset(Dataset):
     """

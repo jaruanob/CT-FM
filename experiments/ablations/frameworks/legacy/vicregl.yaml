@@ -8,18 +8,17 @@ vars#HIGH_RES_GRID_SIZE: "$[x // @vars#DOWNSAMPLE_FACTOR_BY_BACKBONE[@vars#BACKB
 system#model:
     _target_: torch.compile
     model:
-      _target_: project.models.frameworks.vicregl.VICRegL
+      _target_: project.models.frameworks.VICRegL
       num_ftrs: '$@vars#NUM_FTRS_BY_BACKBONE[@vars#BACKBONE_NAME]'
       backbone:
 
 
 system#criterion:
-    _target_: project.loss.vicregl.VICRegLLoss
+    _target_: project.loss.VICRegLLoss
     alpha: 0.75
     gather_distributed: True
 
-
-system#datasets#train#dataset#transform:
+system#dataloaders#train#dataset#dataset#transform:
     _target_: monai.transforms.Compose
     transforms:
         - _target_: monai.transforms.LoadImage

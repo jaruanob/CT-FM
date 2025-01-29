@@ -5,7 +5,7 @@ CONSTANTS#PATCH_SIZE_VOXELS: [64, 320, 320]
 system#model:
     _target_: torch.compile
     model:
-      _target_: project.models.frameworks.reconstruction.Reconstruction
+      _target_: project.models.frameworks.Reconstruction
       backbone:
 
 
@@ -15,7 +15,7 @@ system#criterion:
         _target_: torch.nn.MSELoss # Masked autoencoders use MSE
 
 
-system#datasets#train#dataset#transform:
+system#dataloaders#train#dataset#dataset#transform:
     _target_: monai.transforms.Compose
     transforms:
         - _target_: monai.transforms.LoadImage

@@ -7,14 +7,14 @@ vars#NUM_CONTRASTIVE_CROPS: 12
 system#model: 
     _target_: torch.compile
     model:
-      _target_: project.models.frameworks.vicreg.VICReg
+      _target_: project.models.frameworks.VICReg
       num_ftrs: '$@vars#NUM_FTRS_BY_BACKBONE[@vars#BACKBONE_NAME]'
       backbone:
 
 system#criterion:
-    _target_: project.loss.intrasample_wrapper.IntraSampleWrapper
+    _target_: project.loss.IntraSampleWrapper
     loss:
-      _target_: project.loss.vicreg_loss.VICRegLoss
+      _target_: project.loss.VICRegLoss
 
 system#optimizer#lr: "$((@system#batch_size * @trainer#devices)/256) * 0.0007"
 
@@ -30,7 +30,7 @@ system#scheduler:
       # Ablations - don't let the learning rate go low
       end_lr: "$@system#optimizer#lr / 100"    
 
-system#datasets#train#dataset#transform:
+system#dataloaders#train#dataset#dataset#transform:
     # Parent torchvision Compose so that the monai Compose children can have different map_items.
     # A parent monai Compose would force all children to have its map_items.
     _target_: torchvision.transforms.Compose

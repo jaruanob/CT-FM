@@ -4,7 +4,6 @@ from torch import nn
 from lightly.loss.memory_bank import MemoryBankModule
 from lightly.models.modules import SwaVProjectionHead, SwaVPrototypes
 
-
 torch.set_float32_matmul_precision("medium")
 
 class SwaV(nn.Module):
