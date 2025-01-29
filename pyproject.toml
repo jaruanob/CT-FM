@@ -12,3 +12,55 @@ dependencies = [
 
 [tool.uv.sources]
 project-lighter = { git = "https://github.com/project-lighter/lighter.git", rev = "dataloader" }
+
+[tool.black]
+# https://github.com/psf/black
+target-version = ["py310"]
+line-length = 127
+
+exclude = '''
+/(
+    \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | env
+    | venv
+)/
+'''
+
+[tool.isort]
+# https://github.com/timothycrosley/isort/
+py_version = 310
+line_length = 127
+
+known_typing = ["typing", "types", "typing_extensions", "mypy", "mypy_extensions"]
+sections = ["FUTURE", "TYPING", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+include_trailing_comma = true
+profile = "black"
+multi_line_output = 3
+indent = 4
+
+
+[tool.pylint."MESSAGES CONTROL"]
+max-line-length = 127
+disable = [
+    "too-many-arguments",
+    "no-else-return",
+]
+
+allowed-redefined-builtins = ["input"]
+
+[tool.pylint.master]
+fail-under=7
+
+
+[dependency-groups]
+dev = [
+    "pylint>=3.3.4",
+]

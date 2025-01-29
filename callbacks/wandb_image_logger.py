@@ -1,14 +1,22 @@
 from typing import Any, Dict
 
 import torch
-from pytorch_lightning import Callback, Trainer
-import wandb
 from lighter import System
 from monai.visualize import blend_images
+from pytorch_lightning import Callback, Trainer
+
+import wandb
+
 
 class WandbImageLogger(Callback):
     def on_validation_batch_end(
-        self, trainer: Trainer, pl_module: System, outputs: Any, batch: Any, batch_idx: int, dataloader_idx: int = 0
+        self,
+        trainer: Trainer,
+        pl_module: System,
+        outputs: Any,
+        batch: Any,
+        batch_idx: int,
+        dataloader_idx: int = 0,
     ):
         """Called when the validation batch ends."""
         if batch_idx == 0:
@@ -23,7 +31,11 @@ class WandbImageLogger(Callback):
             gt_overlay = blend_images(image=x, label=y, alpha=0.3, cmap="hsv").squeeze()
 
             views = ["axial", "coronal", "sagittal"]
-            indices = [pred_overlay.shape[1] // 2, pred_overlay.shape[2] // 2, pred_overlay.shape[3] // 2]
+            indices = [
+                pred_overlay.shape[1] // 2,
+                pred_overlay.shape[2] // 2,
+                pred_overlay.shape[3] // 2,
+            ]
 
             images = []
             for view, idx in zip(views, indices):

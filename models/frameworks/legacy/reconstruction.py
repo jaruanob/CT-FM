@@ -18,4 +18,12 @@ class Reconstruction(nn.Module):
         self.backbone = backbone
 
     def forward(self, input):
+        """Forward pass of the reconstruction model.
+
+        Args:
+            input: Input tensor to be passed through the backbone model.
+
+        Returns:
+            Output tensor from the backbone model.
+        """
         return self.backbone(input)

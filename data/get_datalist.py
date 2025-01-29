@@ -1,19 +1,133 @@
-import math
-from pathlib import Path
-import random
-import pandas as pd
-from .ts import class_map
-import requests
-from ..utils import apply_fns
 import json
+import math
+import random
+from pathlib import Path
+
+import pandas as pd
+import requests
+
+from ..utils import apply_fns
+from .ts import class_map
 
 BODY_PART_IDS = {
     "organs_v1": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
-    "vertebra_v1": [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41],
-    "cardiac_v1": [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 104, 93],
-    "muscles_v1": [82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103],
-    "ribs_v1": [58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81],
-    "merlin_v2": [6, 5, 4, 3, 2, 1, 22, 32, 31, 30, 29, 28, 27, 26, 25, 21, 20, 19, 18, 7],
+    "vertebra_v1": [
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+    ],
+    "cardiac_v1": [
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        104,
+        93,
+    ],
+    "muscles_v1": [
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        103,
+    ],
+    "ribs_v1": [
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+    ],
+    "merlin_v2": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1,
+        22,
+        32,
+        31,
+        30,
+        29,
+        28,
+        27,
+        26,
+        25,
+        21,
+        20,
+        19,
+        18,
+        7,
+    ],
     "v1": list(range(1, 105)),
     "v2": list(range(1, 118)),
 }
@@ -32,7 +146,12 @@ def get_ts_class_labels(class_indices, group="v1"):
 
 
 def get_msd_datalist(data_dir, split, task="Task06_Lung"):
-    assert task in ["Task06_Lung", "Task03_Liver", "Task07_Pancreas", "Task08_HepaticVessel"]
+    assert task in [
+        "Task06_Lung",
+        "Task03_Liver",
+        "Task07_Pancreas",
+        "Task08_HepaticVessel",
+    ]
     assert split in ["train", "val", "test"]
     data_dir = Path(data_dir)
     task_id = task.split("_")[0]
@@ -43,15 +162,35 @@ def get_msd_datalist(data_dir, split, task="Task06_Lung"):
 
     match split:
         case "train":
-            return [{"image": data_dir / task / item["image"], "label": data_dir  / task / item["label"], "id": item["image"].split(".")[0]} 
-                            for item in vista_json_data["training"] if item["fold"] != 4]
+            return [
+                {
+                    "image": data_dir / task / item["image"],
+                    "label": data_dir / task / item["label"],
+                    "id": item["image"].split(".")[0],
+                }
+                for item in vista_json_data["training"]
+                if item["fold"] != 4
+            ]
         case "val":
-            return [{"image": data_dir / task /item["image"], "label": data_dir  / task / item["label"], "id": item["image"].split(".")[0]} 
-                            for item in vista_json_data["training"] if item["fold"] == 4]
+            return [
+                {
+                    "image": data_dir / task / item["image"],
+                    "label": data_dir / task / item["label"],
+                    "id": item["image"].split(".")[0],
+                }
+                for item in vista_json_data["training"]
+                if item["fold"] == 4
+            ]
         case "test":
-            return [{"image": data_dir / task / item["image"], "label": data_dir / task / item["label"], "id": item["image"].split(".")[0]} 
-                            for item in vista_json_data["testing"]]
-    
+            return [
+                {
+                    "image": data_dir / task / item["image"],
+                    "label": data_dir / task / item["label"],
+                    "id": item["image"].split(".")[0],
+                }
+                for item in vista_json_data["testing"]
+            ]
+
 
 def get_word_datalist(data_dir, split, samples=None):
     assert split in ["train", "val", "test"]
@@ -63,25 +202,45 @@ def get_word_datalist(data_dir, split, samples=None):
 
     match split:
         case "train":
-            datalist = [{"image": data_dir / item["image"], "label": data_dir  / item["label"], "id": item["image"].split(".")[0]} 
-                            for item in vista_json_data["training"]]
+            datalist = [
+                {
+                    "image": data_dir / item["image"],
+                    "label": data_dir / item["label"],
+                    "id": item["image"].split(".")[0],
+                }
+                for item in vista_json_data["training"]
+            ]
         case "val":
-            datalist = [{"image": data_dir / item["image"], "label": data_dir  / item["label"], "id": item["image"].split(".")[0]} 
-                            for item in vista_json_data["validation"]]
+            datalist = [
+                {
+                    "image": data_dir / item["image"],
+                    "label": data_dir / item["label"],
+                    "id": item["image"].split(".")[0],
+                }
+                for item in vista_json_data["validation"]
+            ]
         case "test":
-            datalist = [{"image": data_dir / item["image"], "label": data_dir /  item["label"], "id": item["image"].split(".")[0]} 
-                            for item in vista_json_data["testing"]]
-            
+            datalist = [
+                {
+                    "image": data_dir / item["image"],
+                    "label": data_dir / item["label"],
+                    "id": item["image"].split(".")[0],
+                }
+                for item in vista_json_data["testing"]
+            ]
+
     if samples is not None:
         datalist = datalist[:samples]
 
     return datalist
 
+
 def get_word_class_labels():
     vista_json_url = "https://raw.githubusercontent.com/Project-MONAI/VISTA/main/vista3d/data/external/WORD.json"
     response = requests.get(vista_json_url)
     vista_json_data = response.json()
-    return vista_json_data["labels"].values()    
+    return vista_json_data["labels"].values()
+
 
 def get_ts_datalist(data_dir, percentage=100, filter_fn=[]):
     """
@@ -96,15 +255,12 @@ def get_ts_datalist(data_dir, percentage=100, filter_fn=[]):
     images = [data_dir / id / "ct.nii.gz" for id in ids]
     labels = [data_dir / id / "label.nii.gz" for id in ids]
 
-    images = images[:round(len(images) * percentage / 100)]
-    labels = labels[:round(len(labels) * percentage / 100)]
+    images = images[: round(len(images) * percentage / 100)]
+    labels = labels[: round(len(labels) * percentage / 100)]
 
     print(f"Number of images: {len(images)}")
 
-    return [
-        {"image": image, "label": label, "id": id}
-        for image, label, id in zip(images, labels, ids)
-    ]
+    return [{"image": image, "label": label, "id": id} for image, label, id in zip(images, labels, ids)]
 
 
 def get_lits_datalist(data_dir, split, test_size=0.4):
@@ -115,21 +271,31 @@ def get_lits_datalist(data_dir, split, test_size=0.4):
     datalist = [{"image": image, "label": label} for image, label in zip(image_paths, label_paths)]
 
     if split == "train":
-        return datalist[:int(len(datalist) * (1 - test_size))]
+        return datalist[: int(len(datalist) * (1 - test_size))]
 
     if split == "val":
-        return datalist[int(len(datalist) * (1 - test_size)):]
+        return datalist[int(len(datalist) * (1 - test_size)) :]
 
 
 def get_radchest_datalist(data_dir, split):
     def get_label_values(df):
-        verified_labels = ["nodule", "mass", "opacity", "consolidation", "atelectasis", "pleural_effusion", "pneumothorax", "pericardial_effusion", "cardiomegaly"]
+        verified_labels = [
+            "nodule",
+            "mass",
+            "opacity",
+            "consolidation",
+            "atelectasis",
+            "pleural_effusion",
+            "pneumothorax",
+            "pericardial_effusion",
+            "cardiomegaly",
+        ]
         for label in verified_labels:
             df[label] = df.filter(like=label).any(axis=1)
 
         df = df.sort_values(by=["NoteAcc_DEID"])
         return df[verified_labels].values
-    
+
     if split == "train":
         images_files = sorted([str(path) for path in Path(data_dir).glob("trn*.npz")])
         df = pd.read_csv(f"{data_dir}/imgtrain_Abnormality_and_Location_Labels.csv")
@@ -224,11 +390,13 @@ def get_sinoct_datalist(data_dir, percentage, split, split_ratio=(0.8, 0.1, 0.1)
     datalist = []
     patient_dirs = _get_patient_dirs(data_dir, percentage, split, split_ratio, seed)
     for patient_dir in patient_dirs:
-        datalist.append({
-            "id": patient_dir.name,
-            "image": patient_dir / "nrrd" / "scan.nrrd",
-            "label": labels_df.loc[patient_dir.name, "abnormal"],
-        })
+        datalist.append(
+            {
+                "id": patient_dir.name,
+                "image": patient_dir / "nrrd" / "scan.nrrd",
+                "label": labels_df.loc[patient_dir.name, "abnormal"],
+            }
+        )
     return datalist
 
 
@@ -247,11 +415,12 @@ def get_cq500_datalist(data_dir, percentage, split, split_ratio=(0.0, 0.0, 1.0),
     for patient_dir in patient_dirs:
         # Get the number of the CT and rename it to CQ500-CT-<number>. They are labeled like that in reads.csv.
         patient_id = f"CQ500-CT-{patient_dir.name.split(' ')[0].replace('CQ500CT', '')}"
-        datalist.append({
-            "id": patient_id,
-            # Get the path to the CT scan
-            "image": list(patient_dir.rglob("scan.nrrd"))[0],
-            "label": labels_df.loc[patient_id, "abnormal"],
-        })
+        datalist.append(
+            {
+                "id": patient_id,
+                # Get the path to the CT scan
+                "image": list(patient_dir.rglob("scan.nrrd"))[0],
+                "label": labels_df.loc[patient_id, "abnormal"],
+            }
+        )
     return datalist
-

@@ -10,19 +10,25 @@ class ReconLossNestedWrapper(nn.Module):
         loss = 0
         for input_samples, target_samples in zip(input, target):
             for input_duplicate, target_duplicate in zip(input_samples, target_samples):
-                loss += self.loss(input_duplicate, target_duplicate) 
+                loss += self.loss(input_duplicate, target_duplicate)
 
         # Average the loss
         loss = loss / (len(input) * len(input[0]))
         return loss
-        
+
 
 class ConReconLoss(nn.Module):
     """
     This class implements the ConReconLoss, a loss function used for contrastive learning + reconstruction
     """
 
-    def __init__(self, contrastive_loss: nn.Module, reconstruction_loss: nn.Module, alpha: float, beta: float):
+    def __init__(
+        self,
+        contrastive_loss: nn.Module,
+        reconstruction_loss: nn.Module,
+        alpha: float,
+        beta: float,
+    ):
         """
         Initialize an instance of the class.
 
@@ -32,7 +38,7 @@ class ConReconLoss(nn.Module):
         self.con_loss = contrastive_loss
         self.recon_loss = ReconLossNestedWrapper(reconstruction_loss)
         self.alpha = alpha
-        self.beta = beta      
+        self.beta = beta
 
     def forward(self, input, target):
         """

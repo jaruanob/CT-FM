@@ -1,6 +1,6 @@
-
-from torch import Tensor
 import lightly.loss.vicregl_loss
+from torch import Tensor
+
 
 class VICRegLLoss(lightly.loss.vicregl_loss.VICRegLLoss):
 

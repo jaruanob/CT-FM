@@ -1,10 +1,11 @@
-from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
-import torch
-import numpy as np
+from dataclasses import dataclass
+
 import monai
-from monai.transforms import CenterSpatialCrop, RandSpatialCrop, Flip, Transform
+import numpy as np
+import torch
+from monai.transforms import CenterSpatialCrop, Flip, RandSpatialCrop, Transform
 from torch import nn
 
 
@@ -40,6 +41,7 @@ class RandSpatialCropWithLocation(RandSpatialCrop):
     """
     Do a random spatial crop and return both the resulting image and the location.
     """
+
     def __init__(self, roi_size) -> None:
         super().__init__(roi_size=roi_size, random_size=False)
 
@@ -57,7 +59,11 @@ class RandSpatialCropWithLocation(RandSpatialCrop):
 
         front_slice, top_slice, left_slice = self._slices
         front, top, left = front_slice.start, top_slice.start, left_slice.start
-        depth, height, width = front_slice.stop - front_slice.start, top_slice.stop - top_slice.start, left_slice.stop - left_slice.start
+        depth, height, width = (
+            front_slice.stop - front_slice.start,
+            top_slice.stop - top_slice.start,
+            left_slice.stop - left_slice.start,
+        )
         image_depth, image_height, image_width = img.shape[-3:]
         location = Location(
             front=front,
@@ -149,29 +155,29 @@ class RandomResizedCropAndFlip3D(Transform):
         return {"image": img, "grid": grid}
 
     def location_to_NxNxN_grid(self, location: Location) -> torch.Tensor:
-            """Create grid from location object.
-            Create a grid tensor with grid_size rows, grid_size columns, and grid_size depth, where each cell represents a region of
-            the original image. The grid is used to map the cropped and transformed image back to the
-            original image space.
-            Args:
-                location: An instance of the Location class, containing the location and size of the
-                    transformed image in the original image space.
-            Returns:
-                A grid tensor of shape (grid_size, grid_size, grid_size, 3), where the last dimension represents the (x, y, z) coordinate
-                of the center of each cell in the original image space.
-            """
+        """Create grid from location object.
+        Create a grid tensor with grid_size rows, grid_size columns, and grid_size depth, where each cell represents a
+        region of the original image. The grid is used to map the cropped and transformed image back to the
+        original image space.
+        Args:
+            location: An instance of the Location class, containing the location and size of the
+                transformed image in the original image space.
+        Returns:
+            A grid tensor of shape (grid_size, grid_size, grid_size, 3), where the last dimension represents the
+            (x, y, z) coordinate of the center of each cell in the original image space.
+        """
 
-            cell_depth = location.depth / self.grid_size[0]
-            cell_height = location.height / self.grid_size[1]
-            cell_width = location.width / self.grid_size[2]
-            z = torch.linspace(location.front, location.front + location.depth, self.grid_size[0]) + (cell_depth / 2)
-            y = torch.linspace(location.top, location.top + location.height, self.grid_size[1]) + (cell_height / 2)
-            x = torch.linspace(location.left, location.left + location.width, self.grid_size[2]) + (cell_width / 2)
-            if location.depth_flip:
-                z = torch.flip(z, dims=[0])
-            if location.vertical_flip:
-                y = torch.flip(y, dims=[0])
-            if location.horizontal_flip:
-                x = torch.flip(x, dims=[0])
-            grid_z, grid_y, grid_x = torch.meshgrid(z, y, x, indexing="ij")
-            return torch.stack([grid_z, grid_y, grid_x], dim=-1)
+        cell_depth = location.depth / self.grid_size[0]
+        cell_height = location.height / self.grid_size[1]
+        cell_width = location.width / self.grid_size[2]
+        z = torch.linspace(location.front, location.front + location.depth, self.grid_size[0]) + (cell_depth / 2)
+        y = torch.linspace(location.top, location.top + location.height, self.grid_size[1]) + (cell_height / 2)
+        x = torch.linspace(location.left, location.left + location.width, self.grid_size[2]) + (cell_width / 2)
+        if location.depth_flip:
+            z = torch.flip(z, dims=[0])
+        if location.vertical_flip:
+            y = torch.flip(y, dims=[0])
+        if location.horizontal_flip:
+            x = torch.flip(x, dims=[0])
+        grid_z, grid_y, grid_x = torch.meshgrid(z, y, x, indexing="ij")
+        return torch.stack([grid_z, grid_y, grid_x], dim=-1)

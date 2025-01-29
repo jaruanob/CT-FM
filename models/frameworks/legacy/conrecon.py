@@ -15,7 +15,13 @@ class ConRecon(nn.Module):
         projection_head (SimCLRProjectionHead): The projection head used in the ConRecon model.
     """
 
-    def __init__(self, backbone: nn.Module, num_ftrs: int = 32, out_dim: int = 128, spatial_dims: int = 3):
+    def __init__(
+        self,
+        backbone: nn.Module,
+        num_ftrs: int = 32,
+        out_dim: int = 128,
+        spatial_dims: int = 3,
+    ):
         """
         Constructs the ConRecon model with a given backbone network, number of features, and output dimension.
 
@@ -40,13 +46,14 @@ class ConRecon(nn.Module):
         Defines the computation performed at every call.
 
         Args:
-            input (torch.Tensor or tuple or list): The input data. It can be a tensor, a tuple, or a list. Nested 
+            input (torch.Tensor or tuple or list): The input data. It can be a tensor, a tuple, or a list. Nested
                 structures are also supported.
 
         Returns:
-            dict: The output of the forward pass. The dictionary contains two keys: "con" and "recon". 
+            dict: The output of the forward pass. The dictionary contains two keys: "con" and "recon".
                 "con" corresponds to the contrastive representation and "recon" corresponds to the reconstruction map.
         """
+
         def tensor_forward(x):
             assert isinstance(x, torch.Tensor)
             embedding, outputs = self.backbone(x)
@@ -73,17 +80,19 @@ class ConRecon(nn.Module):
 
         if isinstance(input, torch.Tensor):
             embedding, map = tensor_forward(input)
-        
+
         if isinstance(input, tuple) or isinstance(input, list):
-            embedding, map =  sequence_forward(input)
+            embedding, map = sequence_forward(input)
 
         return {"con": embedding, "recon": map}
 
 
 if __name__ == "__main__":
     import sys
+
     sys.path.append("../backbones")
     from segresnetds_w_embedding import SegResNetDSwEmbedding
+
     # Create a ConRecon model
 
     backbone = SegResNetDSwEmbedding()

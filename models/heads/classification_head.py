@@ -1,5 +1,6 @@
 import torch.nn as nn
 
+
 class ClassificationHead(nn.Module):
     def __init__(self, in_features, hidden_size, num_classes, pre_func=None):
         super(ClassificationHead, self).__init__()
@@ -19,4 +20,3 @@ class ClassificationHead(nn.Module):
         x = nn.functional.relu(x, inplace=True)
         x = self.fc2(x)
         return x
-    

@@ -1,5 +1,7 @@
 from typing import List
+
 from lightly.loss import VICRegLoss as lightly_VICRegLoss
+
 
 class VICRegLoss(lightly_VICRegLoss):
     """
@@ -7,12 +9,14 @@ class VICRegLoss(lightly_VICRegLoss):
     Variance-Invariance-Covariance Regularization Loss
     """
 
-    def __init__(self,        
+    def __init__(
+        self,
         lambda_param: float = 25.0,
         mu_param: float = 25.0,
         nu_param: float = 1.0,
         gather_distributed: bool = False,
-        eps=0.0001,):
+        eps=0.0001,
+    ):
         """
         Initialize an instance of the class.
 

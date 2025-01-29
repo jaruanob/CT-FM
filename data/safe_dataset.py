@@ -1,15 +1,16 @@
 import traceback
 
 import torch
-from torch.utils.data import Dataset
 from loguru import logger
+from torch.utils.data import Dataset
 
 from ..utils import apply_fns
+
 
 class SafeDataset(Dataset):
     """
     A wrapper around a Dataset that patches the __getitem__ method to catch exceptions
-    and return None if an exception occurs, assuming that it happened because the file 
+    and return None if an exception occurs, assuming that it happened because the file
     is corrupted or missing and not because of a bug in the code.
 
     Attributes:
@@ -43,7 +44,7 @@ class SafeDataset(Dataset):
         except Exception as e:
             logger.error(f"Error at index {index}, skipping it. \nException: {e}\n{traceback.format_exc()}")
             return None
-        
+
         if self.check_fns is not None:
             item = apply_fns(item, self.check_fns)
 

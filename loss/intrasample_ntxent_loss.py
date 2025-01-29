@@ -1,6 +1,6 @@
 import torch
-from torch import nn
-from torch import Tensor
+from torch import Tensor, nn
+
 
 class IntraSampleNTXEntLoss(nn.Module):
     """
@@ -54,22 +54,22 @@ class IntraSampleNTXEntLoss(nn.Module):
             per_sample_loss = 0
             for i in crop_range:
                 # Get positives for current crop
-                positive_0 = input[i][0][b:b+1]
-                positive_1 = input[i][1][b:b+1]
+                positive_0 = input[i][0][b : b + 1]
+                positive_1 = input[i][1][b : b + 1]
 
                 # Build negatives tensor directly
                 negatives = []
                 for j in range(num_crops):
                     if j != i:
                         negatives.extend([input[j][0][b], input[j][1][b]])
-                        
+
                 if negatives:  # Only process if we have negatives
                     negatives = torch.stack(negatives)
-                    
+
                     # Compute similarities
                     sim_pos = torch.mm(positive_0, positive_1.t())
                     sim_neg = torch.mm(positive_0, negatives.t())
-                    
+
                     # Compute loss
                     logits = torch.cat([sim_pos, sim_neg], dim=1) / self.temperature
                     per_sample_loss += self.cross_entropy(logits, labels)
@@ -81,11 +81,9 @@ class IntraSampleNTXEntLoss(nn.Module):
             # Compute variance loss only if needed
             positives_0 = torch.cat([input[i][0] for i in range(num_crops)], dim=0)
             positives_1 = torch.cat([input[i][1] for i in range(num_crops)], dim=0)
-            var_loss = 0.5 * (
-                variance_loss(positives_0, self.eps) + variance_loss(positives_1, self.eps)
-            )
+            var_loss = 0.5 * (variance_loss(positives_0, self.eps) + variance_loss(positives_1, self.eps))
             return (1 - self.variance_weight) * inv_loss + self.variance_weight * var_loss
-        
+
         return inv_loss
 
 

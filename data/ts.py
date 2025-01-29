@@ -1,5 +1,4 @@
 class_map = {
-
     # classes of old TotalSegmentator v1
     "total_v1": {
         1: "spleen",
@@ -105,9 +104,8 @@ class_map = {
         101: "autochthon_right",
         102: "iliopsoas_left",
         103: "iliopsoas_right",
-        104: "urinary_bladder"
+        104: "urinary_bladder",
     },
-
     # classes of new TotalSegmentator v2
     "total": {
         1: "spleen",
@@ -226,9 +224,8 @@ class_map = {
         114: "rib_right_11",
         115: "rib_right_12",
         116: "sternum",
-        117: "costal_cartilages"
+        117: "costal_cartilages",
     },
-
     "total_mr": {
         1: "spleen",
         2: "kidney_right",
@@ -281,12 +278,8 @@ class_map = {
         49: "iliopsoas_right",
         50: "brain",
     },
-    
     # total_fast not extra class map, because easier to use just "total" for fast model
-    "lung_vessels": {
-        1: "lung_vessels",
-        2: "lung_trachea_bronchia"
-    },
+    "lung_vessels": {1: "lung_vessels", 2: "lung_trachea_bronchia"},
     "oculomotor_muscles": {
         1: "skull",  # auxiliary class
         2: "eyeball_right",
@@ -306,7 +299,7 @@ class_map = {
         16: "medial_rectus_muscle_right",
         17: "inferior_oblique_muscle_left",
         18: "inferior_rectus_muscle_left",
-        19: "optic_nerve_right"
+        19: "optic_nerve_right",
     },
     "covid": {
         1: "lung_covid_infiltrate",
@@ -331,7 +324,7 @@ class_map = {
     "vertebrae_mr": {
         1: "sacrum",
         2: "vertebrae_L5",
-        3: "vertebrae_L4", 
+        3: "vertebrae_L4",
         4: "vertebrae_L3",
         5: "vertebrae_L2",
         6: "vertebrae_L1",
@@ -360,14 +353,8 @@ class_map = {
         2: "pleural_effusion",
         3: "pericardial_effusion",
     },
-    "liver_vessels": {
-        1: "liver_vessels",
-        2: "liver_tumor"
-    },
-    "vertebrae_body": {
-        1: "vertebrae_body",
-        2: "intervertebral_discs"
-    },
+    "liver_vessels": {1: "liver_vessels", 2: "liver_tumor"},
+    "vertebrae_body": {1: "vertebrae_body", 2: "intervertebral_discs"},
     "heartchambers_highres": {
         1: "heart_myocardium",
         2: "heart_atrium_left",
@@ -375,7 +362,7 @@ class_map = {
         4: "heart_atrium_right",
         5: "heart_ventricle_right",
         6: "aorta",
-        7: "pulmonary_artery"
+        7: "pulmonary_artery",
     },
     "appendicular_bones": {
         1: "patella",
@@ -388,7 +375,7 @@ class_map = {
         8: "radius",
         9: "carpal",
         10: "metacarpal",
-        11: "phalanges_hand"
+        11: "phalanges_hand",
     },
     "appendicular_bones_mr": {
         1: "patella",
@@ -408,39 +395,24 @@ class_map = {
         12: "humerus",
         13: "femur",
         14: "liver",
-        15: "spleen"
+        15: "spleen",
     },
-    "tissue_types": {
-        1: "subcutaneous_fat",
-        2: "torso_fat",
-        3: "skeletal_muscle"
-    },
-    "tissue_types_mr": {
-        1: "subcutaneous_fat",
-        2: "torso_fat",
-        3: "skeletal_muscle"
-    },
+    "tissue_types": {1: "subcutaneous_fat", 2: "torso_fat", 3: "skeletal_muscle"},
+    "tissue_types_mr": {1: "subcutaneous_fat", 2: "torso_fat", 3: "skeletal_muscle"},
     "tissue_4_types": {
         1: "subcutaneous_fat",
         2: "torso_fat",
         3: "skeletal_muscle",
-        4: "intermuscular_fat"
+        4: "intermuscular_fat",
     },
-    "face": {
-        1: "face"
-    },
-    "face_mr": {
-        1: "face"
-    },
+    "face": {1: "face"},
+    "face_mr": {1: "face"},
     # those classes need to be removed
-    "face_mr_auxiliary": {
-        2: "brain",
-        3: "liver"
-    },
+    "face_mr_auxiliary": {2: "brain", 3: "liver"},
     "brain_structures": {
         1: "brainstem",  # + brain_parenchyma
         2: "subarachnoid_space",
-        3: "venous_sinuses", # + dural folds
+        3: "venous_sinuses",  # + dural folds
         4: "septum_pellucidum",
         5: "cerebellum",
         6: "caudate_nucleus",
@@ -453,7 +425,7 @@ class_map = {
         13: "parietal_lobe",
         14: "occipital_lobe",
         15: "temporal_lobe",
-        16: "thalamus"
+        16: "thalamus",
     },
     "head_glands_cavities": {
         1: "eye_left",
@@ -474,7 +446,7 @@ class_map = {
         16: "auditory_canal_right",
         17: "auditory_canal_left",
         18: "soft_palate",
-        19: "hard_palate"
+        19: "hard_palate",
     },
     "headneck_bones_vessels": {
         1: "larynx_air",
@@ -490,7 +462,7 @@ class_map = {
         11: "internal_jugular_vein_right",
         12: "internal_jugular_vein_left",
     },
-    "head_muscles": {   
+    "head_muscles": {
         1: "masseter_right",
         2: "masseter_left",
         3: "temporalis_right",
@@ -501,7 +473,7 @@ class_map = {
         8: "medial_pterygoid_left",
         9: "tongue",
         10: "digastric_right",
-        11: "digastric_left"
+        11: "digastric_left",
     },
     "headneck_muscles": {
         1: "sternocleidomastoid_right",
@@ -526,7 +498,7 @@ class_map = {
         20: "thyrohyoid_right",
         21: "thyrohyoid_left",
         22: "prevertebral_right",
-        23: "prevertebral_left"
+        23: "prevertebral_left",
     },
     # CT model WIP
     "thigh_shoulder_muscles": {
@@ -547,7 +519,7 @@ class_map = {
         15: "pectoralis_minor",
         16: "serratus_anterior",
         17: "teres_major",
-        18: "triceps_brachii"
+        18: "triceps_brachii",
     },
     "thigh_shoulder_muscles_mr": {
         1: "quadriceps_femoris_left",
@@ -567,27 +539,14 @@ class_map = {
         15: "pectoralis_minor",
         16: "serratus_anterior",
         17: "teres_major",
-        18: "triceps_brachii"
+        18: "triceps_brachii",
     },
-    "lung_nodules": {
-        1: "lung",
-        2: "lung_nodules"
-    },
-    "kidney_cysts": {
-        1: "kidney_cyst_left",
-        2: "kidney_cyst_right"
-    },
+    "lung_nodules": {1: "lung", 2: "lung_nodules"},
+    "kidney_cysts": {1: "kidney_cyst_left", 2: "kidney_cyst_right"},
     # those classes need to be removed
-    "kidney_cysts_auxiliary": {
-        3: "kidney_left",
-        4: "kidney_right"
-    },
-    "breasts": {
-        1: "breast"
-    },
-    "test": {
-        1: "carpal"
-    }
+    "kidney_cysts_auxiliary": {3: "kidney_left", 4: "kidney_right"},
+    "breasts": {1: "breast"},
+    "test": {1: "carpal"},
 }
 
 
@@ -604,12 +563,11 @@ commercial_models = {
     "brain_structures": 409,
     "thigh_shoulder_muscles": 857,
     "thigh_shoulder_muscles_mr": 857,
-    "coronary_arteries": 507
+    "coronary_arteries": 507,
 }
 
 
 class_map_5_parts = {
-
     # 24 classes
     "class_map_part_organs": {
         1: "spleen",
@@ -635,9 +593,8 @@ class_map_5_parts = {
         21: "urinary_bladder",
         22: "prostate",
         23: "kidney_cyst_left",
-        24: "kidney_cyst_right"
+        24: "kidney_cyst_right",
     },
-
     # 26 classes
     "class_map_part_vertebrae": {
         1: "sacrum",
@@ -665,9 +622,8 @@ class_map_5_parts = {
         23: "vertebrae_C4",
         24: "vertebrae_C3",
         25: "vertebrae_C2",
-        26: "vertebrae_C1"
+        26: "vertebrae_C1",
     },
-
     # 18
     "class_map_part_cardiac": {
         1: "heart",
@@ -687,9 +643,8 @@ class_map_5_parts = {
         15: "iliac_artery_left",
         16: "iliac_artery_right",
         17: "iliac_vena_left",
-        18: "iliac_vena_right"
+        18: "iliac_vena_right",
     },
-
     # 23
     "class_map_part_muscles": {
         1: "humerus_left",
@@ -714,9 +669,8 @@ class_map_5_parts = {
         20: "iliopsoas_left",
         21: "iliopsoas_right",
         22: "brain",
-        23: "skull"
+        23: "skull",
     },
-
     # 26 classes
     # 12. ribs start from vertebrae T12
     # Small subset of population (roughly 8%) have 13. rib below 12. rib
@@ -754,15 +708,13 @@ class_map_5_parts = {
         23: "rib_right_11",
         24: "rib_right_12",
         25: "sternum",
-        26: "costal_cartilages"
+        26: "costal_cartilages",
     },
-
-    "test": class_map["test"]
+    "test": class_map["test"],
 }
 
 
 class_map_parts_mr = {
-    
     "class_map_part_organs": {
         1: "spleen",
         2: "kidney_right",
@@ -792,9 +744,8 @@ class_map_parts_mr = {
         26: "iliac_artery_left",
         27: "iliac_artery_right",
         28: "iliac_vena_left",
-        29: "iliac_vena_right"
+        29: "iliac_vena_right",
     },
-    
     "class_map_part_muscles": {
         1: "humerus_left",
         2: "humerus_right",
@@ -816,15 +767,14 @@ class_map_parts_mr = {
         18: "autochthon_right",
         19: "iliopsoas_left",
         20: "iliopsoas_right",
-        21: "brain"
-    }
+        21: "brain",
+    },
 }
 
 
 class_map_parts_headneck_muscles = {
- 
     "class_map_part_muscles_1": {
-        1: "sternocleidomastoid_right", 
+        1: "sternocleidomastoid_right",
         2: "sternocleidomastoid_left",
         3: "superior_pharyngeal_constrictor",
         4: "middle_pharyngeal_constrictor",
@@ -834,9 +784,8 @@ class_map_parts_headneck_muscles = {
         8: "platysma_right",
         9: "platysma_left",
         10: "levator_scapulae_right",
-        11: "levator_scapulae_left"
+        11: "levator_scapulae_left",
     },
-
     "class_map_part_muscles_2": {
         1: "anterior_scalene_right",
         2: "anterior_scalene_left",
@@ -849,8 +798,8 @@ class_map_parts_headneck_muscles = {
         9: "thyrohyoid_right",
         10: "thyrohyoid_left",
         11: "prevertebral_right",
-        12: "prevertebral_left"
-    }
+        12: "prevertebral_left",
+    },
 }
 
 
@@ -860,18 +809,17 @@ map_taskid_to_partname_ct = {
     293: "class_map_part_cardiac",
     294: "class_map_part_muscles",
     295: "class_map_part_ribs",
-
     517: "test",
 }
 
 map_taskid_to_partname_mr = {
     850: "class_map_part_organs",
-    851: "class_map_part_muscles"
+    851: "class_map_part_muscles",
 }
 
 map_taskid_to_partname_headneck_muscles = {
     778: "class_map_part_muscles_1",
-    779: "class_map_part_muscles_2"
+    779: "class_map_part_muscles_2",
 }
 
 # pprint({idx:v for idx, (k, v) in enumerate(a.items())}, sort_dicts=False)

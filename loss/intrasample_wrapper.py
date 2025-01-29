@@ -19,7 +19,7 @@ class IntraSampleWrapper(nn.Module):
 
     def forward(self, input):
         """
-        The forward pass of the IntraSampleWrapper. This wrapper converts 
+        The forward pass of the IntraSampleWrapper. This wrapper converts
         a list of list of batched tensors where the first list is of the number of crops and the second
         is of views to a format where the number of crops is the batch dimension.
 

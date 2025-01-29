@@ -1,4 +1,5 @@
-from typing import Any, List, Callable
+from typing import Any, Callable, List
+
 
 def ensure_list(input: Any) -> List:
     """
@@ -17,6 +18,7 @@ def ensure_list(input: Any) -> List:
     if input is None:
         return []
     return [input]
+
 
 def apply_fns(data: Any, fns: Callable | List[Callable]) -> Any:
     """

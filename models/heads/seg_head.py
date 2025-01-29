@@ -1,18 +1,18 @@
 from __future__ import annotations
 
+from typing import Union
+
 import copy
 from collections.abc import Callable
-from typing import Union
 
 import numpy as np
 import torch
 import torch.nn as nn
-
 from monai.networks.blocks.upsample import UpSample
 from monai.networks.layers.factories import Act, Conv, Norm, split_args
 from monai.networks.layers.utils import get_act_layer, get_norm_layer
-from monai.utils import UpsampleMode, has_option
 from monai.networks.nets.segresnet_ds import SegResBlock
+from monai.utils import UpsampleMode, has_option
 
 
 class SegDecoder(nn.Module):
@@ -37,13 +37,22 @@ class SegDecoder(nn.Module):
                 align_corners=False,
             )
             blocks = [
-                SegResBlock(spatial_dims=3, in_channels=projection_dim, kernel_size=kernel_size, norm="instance", act="relu")
+                SegResBlock(
+                    spatial_dims=3,
+                    in_channels=projection_dim,
+                    kernel_size=kernel_size,
+                    norm="instance",
+                    act="relu",
+                )
             ]
             level["blocks"] = nn.Sequential(*blocks)
             self.up_layers.append(level)
 
         self.head = nn.Conv3d(
-            in_channels=projection_dim, out_channels=out_channels, kernel_size=1, bias=True
+            in_channels=projection_dim,
+            out_channels=out_channels,
+            kernel_size=1,
+            bias=True,
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

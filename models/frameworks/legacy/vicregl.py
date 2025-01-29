@@ -1,21 +1,26 @@
-
+from lightly.models.modules.heads import (
+    BarlowTwinsProjectionHead,
+    VicRegLLocalProjectionHead,
+)
 from torch import nn
-from lightly.models.modules.heads import BarlowTwinsProjectionHead, VicRegLLocalProjectionHead
+
+from ..utils import AdaptiveAvgPool
 
 
 class VICRegL(nn.Module):
-    def __init__(self, backbone, num_ftrs, global_projection_ftrs=(2048, 2048), local_projection_ftrs=(128, 128), spatial_dims=3):
+    def __init__(
+        self,
+        backbone,
+        num_ftrs,
+        global_projection_ftrs=(2048, 2048),
+        local_projection_ftrs=(128, 128),
+        spatial_dims=3,
+    ):
         super().__init__()
         self.backbone = backbone
         self.global_projection_head = BarlowTwinsProjectionHead(num_ftrs, *global_projection_ftrs)
         self.local_projection_head = VicRegLLocalProjectionHead(num_ftrs, *local_projection_ftrs)
-        if spatial_dims == 2:
-            self.average_pool = nn.AdaptiveAvgPool2d(output_size=(1, 1))
-        elif spatial_dims == 3:
-            self.average_pool = nn.AdaptiveAvgPool3d(output_size=(1, 1, 1))
-        else:
-            raise ValueError("`spatial_dims` must be 2 or 3.")
-
+        self.average_pool = AdaptiveAvgPool(spatial_dims)
 
     def forward(self, input):
         high_resolution_crops = input["high_resolution_crops"]

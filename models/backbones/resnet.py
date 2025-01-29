@@ -1,5 +1,5 @@
-import torch
 import monai
+import torch
 
 
 class ResNet(monai.networks.nets.ResNet):

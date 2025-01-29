@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import torch
 
+
 def plot_3d_image(ret, cmap=None):
     # Plot axial slice
     plt.figure(figsize=(10, 10))
