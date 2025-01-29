@@ -1,6 +1,7 @@
 from typing import List
-from torch import nn
+
 from lightly.loss import NegativeCosineSimilarity
+from torch import nn
 
 
 class SimSiamLoss(nn.Module):
@@ -9,8 +10,9 @@ class SimSiamLoss(nn.Module):
     SimSiam Loss using Negative Cosine Similarity
     """
 
-    def __init__(self,        
-        ):
+    def __init__(
+        self,
+    ):
         """
         Initialize an instance of the class.
 
@@ -34,4 +36,4 @@ class SimSiamLoss(nn.Module):
 
         assert len(out) == 2, "Expecting two tuples as input"
         (z1, p1), (z2, p2) = out
-        return (self.criterion(z1, p2)/2 + self.criterion(z2, p1)/2)
+        return self.criterion(z1, p2) / 2 + self.criterion(z2, p1) / 2

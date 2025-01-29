@@ -11,6 +11,9 @@ args:
 
 
 vars:
+    batch_size: 2
+    pin_memory: True
+    num_workers: 8
     init_LR: 0.0002
     patch_size: "$[96, 160, 160] if @vars#format == 'lighter' else [128, 128, 96]"
     val_max_patch_size: "$[192, 240, 240] if @vars#format == 'lighter' else [240, 240, 192]"
@@ -55,7 +58,7 @@ trainer:
         group: "@vars#wandb_group"
 
     callbacks:
-        - _target_: lighter.callbacks.LighterFreezer
+        - _target_: lighter.callbacks.Freezer
           name_starts_with: ["trunk.encoder"]
 
         - _target_: pytorch_lightning.callbacks.ModelCheckpoint
@@ -71,10 +74,8 @@ trainer:
         - _target_: project.callbacks.WandbImageLogger
 
 system:
-    _target_: lighter.LighterSystem
-    batch_size: 2
-    pin_memory: True
-    num_workers: 8
+    _target_: lighter.System
+
     model:
         _target_: project.models.wrapper.TrunkHeadWrapper
         trunk:
@@ -107,28 +108,27 @@ system:
 
     metrics:
         train:
-          # Classwise_Dice:
-          #     _target_: torchmetrics.wrappers.ClasswiseWrapper
-          #     metric:
-          #       _target_: project.metrics.monai.DiceScore
-          #       include_background: True
-          #       per_class: True
-          #     labels: "@vars#class_labels"
           Macro_Dice:
               _target_: project.metrics.monai.DiceScore
               include_background: False
               per_class: False
-          Dice:
-              _target_: torchmetrics.Dice
-              compute_on_cpu: True
-              compute_with_cache: False
-              ignore_index: 0
-              num_classes: "@vars#out_channels"
+          Classwise_Dice:
+              _target_: torchmetrics.wrappers.ClasswiseWrapper
+              metric:
+                _target_: project.metrics.monai.DiceScore
+                include_background: True
+                per_class: True
+              labels: "@vars#class_labels"
               
         val: "%#train"
 
-    datasets:
+    dataloaders:
         train:
+          _target_: torch.utils.data.DataLoader
+          batch_size: "%vars#batch_size"
+          pin_memory: "%vars#pin_memory"
+          num_workers: "%vars#num_workers"
+          dataset:
             _target_: monai.data.PersistentDataset
             cache_dir: '$f"{@vars#cache_dir}/train"'
             hash_transform: "$monai.data.utils.json_hashing"
@@ -221,6 +221,11 @@ system:
                       track_meta: False
     
         val:
+          _target_: torch.utils.data.DataLoader
+          batch_size: 1
+          pin_memory: "%vars#pin_memory"
+          num_workers: "%vars#num_workers"
+          dataset:
             _target_: monai.data.PersistentDataset
             cache_dir: '$f"{@vars#cache_dir}/val"'
             hash_transform: "$monai.data.utils.json_hashing"
@@ -264,11 +269,20 @@ system:
                       keys: ["image", "label"]
                       roi_size: "@vars#val_max_patch_size"
                       random_size: False
+                    - _target_: monai.transforms.SpatialPadd
+                      keys: ["image", "label"]
+                      spatial_size: "@vars#val_max_patch_size"
+                      mode: constant                      
                     - _target_: monai.transforms.Lambda
                       func: '$lambda x: {"input": x["image"].as_tensor(), "target": x["label"].as_tensor(), "id": x["id"]}'
                       track_meta: False
 
         predict:
+          _target_: torch.utils.data.DataLoader
+          batch_size: 1
+          pin_memory: "%vars#pin_memory"
+          num_workers: "%vars#num_workers"
+          dataset:
             _target_: monai.data.Dataset
             data:
                 _target_: project.data.get_ts_datalist
@@ -312,25 +326,36 @@ system:
                     - _target_: monai.transforms.SelectItemsd
                       keys: ["input", "target", "id"]                      
 
-    postprocessing:
+    adapters:
+      train:
+        batch:
+            _target_: lighter.adapters.BatchAdapter
+            input_accessor: "input"
+            target_accessor: "target"
+            identifier_accessor: "id"
         metrics:
-            pred: # Pred for torchmetrics is (N, C, ...)
+            _target_: lighter.adapters.MetricsAdapter
+            pred_argument: 0
+            target_argument: 1
+            pred_transforms: # Pred for torchmetrics is (N, C, ...)
                 # Hacky solution below. DS returns a list when model is in train mode 
                 - "$lambda x: x[0] if isinstance(x, list) else x" 
                 - "$lambda x: torch.softmax(x, 1)"
-            target:
+            target_transforms:
                 - "$lambda x: x.squeeze(1).long()"
 
-        logging:              
-            pred:
+        logging:        
+            _target_: lighter.adapters.LoggingAdapter      
+            pred_transforms:
+                - "$lambda x: x[0] if isinstance(x, list) else x" 
+                - "$lambda x: torch.softmax(x, 1)"
                 - "$lambda x: x.argmax(dim=1, keepdim=True)"
 
-            target:
-                - "$lambda x: x.unsqueeze(1)"
+      val: "%#train"
 
     inferer:
         _target_: monai.inferers.SlidingWindowInfererAdapt
         roi_size: "@vars#patch_size"
-        sw_batch_size: "%system#batch_size"
+        sw_batch_size: "%vars#batch_size"
         overlap: 0.625
         mode: gaussian

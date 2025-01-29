@@ -1,4 +1,0 @@
-trainer#callbacks:
-      - _target_: lighter.callbacks.writer.table.LighterTableWriter
-        path : $f"{@vars#save_dir.replace('checkpoints', 'predictions')}/predictions.csv"
-        writer: tensor

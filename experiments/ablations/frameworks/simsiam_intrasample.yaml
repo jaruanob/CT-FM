@@ -7,17 +7,17 @@ vars#NUM_CONTRASTIVE_CROPS: 15
 system#model: 
     _target_: torch.compile
     model:
-      _target_: project.models.frameworks.simsiam.SimSiam
+      _target_: project.models.frameworks.SimSiam
       num_ftrs: '$@vars#NUM_FTRS_BY_BACKBONE[@vars#BACKBONE_NAME]'
       backbone:
 
 system#criterion:
-    _target_: project.loss.intrasample_wrapper.IntraSampleWrapper
+    _target_: project.loss.IntraSampleWrapper
     loss:
-        _target_: project.loss.simsiam_loss.SimSiamLoss
+        _target_: project.loss.SimSiamLoss
     
 
-system#datasets#train#dataset#transform:
+system#dataloaders#train#dataset#dataset#transform:
     # Parent torchvision Compose so that the monai Compose children can have different map_items.
     # A parent monai Compose would force all children to have its map_items.
     _target_: torchvision.transforms.Compose

@@ -3,19 +3,18 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from copy import deepcopy
 
 import torch
-from monai.transforms import RandScaleCrop, Resize, Transform, MapTransform
-
 from lighter.utils.misc import ensure_list
+from monai.transforms import MapTransform, RandScaleCrop, Resize, Transform
 
 
 class Duplicate:
-    """Duplicate an input and apply two different transforms. Used for SimCLR primarily.
-    """
+    """Duplicate an input and apply two different transforms. Used for SimCLR primarily."""
 
-    def __init__(self,
-            transforms1: Optional[Callable] = None,
-            transforms2: Optional[Callable] = None
-        ):
+    def __init__(
+        self,
+        transforms1: Optional[Callable] = None,
+        transforms2: Optional[Callable] = None,
+    ):
         """Duplicates an input and applies the given transformations to each copy separately.
         Args:
             transforms1 (Optional[Callable], optional): _description_. Defaults to None.
@@ -42,18 +41,23 @@ class Duplicate:
 
 
 class MultiCrop:
-    """Multi-Crop augmentation.
-    """
+    """Multi-Crop augmentation."""
 
-    def __init__(self, high_resolution_transforms: List[Callable],
-                 low_resolution_transforms: Optional[List[Callable]] = None):
+    def __init__(
+        self,
+        high_resolution_transforms: List[Callable],
+        low_resolution_transforms: Optional[List[Callable]] = None,
+    ):
         self.high_resolution_transforms = ensure_list(high_resolution_transforms)
         self.low_resolution_transforms = ensure_list(low_resolution_transforms)
 
     def __call__(self, input):
         high_resolution_crops = [transform(input) for transform in self.high_resolution_transforms]
         low_resolution_crops = [transform(input) for transform in self.low_resolution_transforms]
-        return {"high_resolution_crops": high_resolution_crops, "low_resolution_crops": low_resolution_crops}
+        return {
+            "high_resolution_crops": high_resolution_crops,
+            "low_resolution_crops": low_resolution_crops,
+        }
 
 
 class RandomResizedCrop(Transform):
@@ -92,17 +96,13 @@ class RandomResizedCrop(Transform):
             image = resizer(image)
         return image
 
+
 class DictifyTransform(MapTransform):
     """
     Dict version of RandomResizedCrop.
     """
 
-    def __init__(
-        self,
-        transform: Callable,
-        keys: List[str],
-        allow_missing_keys: bool = False
-    ):
+    def __init__(self, transform: Callable, keys: List[str], allow_missing_keys: bool = False):
         super().__init__(keys=keys, allow_missing_keys=allow_missing_keys)
         self.transform = transform
 
@@ -114,4 +114,3 @@ class DictifyTransform(MapTransform):
                 if not self.allow_missing_keys:
                     raise ValueError(f"Key {key} not found in the input dictionary.")
         return data
-

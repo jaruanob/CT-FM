@@ -34,10 +34,7 @@ trainer:
           every_n_epochs: 1
 
 system:
-    _target_: lighter.LighterSystem
-    batch_size: 5
-    pin_memory: True
-    num_workers: 10
+    _target_: lighter.System
 
     model:
   
@@ -55,12 +52,26 @@ system:
         T_max: "%trainer#max_epochs"
         eta_min: 0.000001
 
-    datasets:
+    dataloaders:
         train:
-            _target_: project.data.safe_dataset.SafeDataset
+            _target_: torch.utils.data.DataLoader
+            batch_size: 5
+            pin_memory: True
+            num_workers: 10            
             dataset:
-                _target_: monai.data.Dataset
-                data: "$sorted(list(Path('/mnt/ssd1/ibro/IDC_SSL_CT').rglob('*.nrrd')))"
-                _requires_: "$from pathlib import Path"
-                transform:
+                _target_: project.data.safe_dataset.SafeDataset
+                dataset:
+                    _target_: monai.data.Dataset
+                    data: "$sorted(list(Path('/mnt/ssd1/ibro/IDC_SSL_CT').rglob('*.nrrd')))"
+                    _requires_: "$from pathlib import Path"
+                    transform:
 
+    adapters:
+        train:
+            batch:
+                _target_: lighter.adapters.BatchAdapter
+                input_accessor: "input"
+
+            criterion:
+                _target_: lighter.adapters.CriterionAdapter
+                pred_argument: 0
