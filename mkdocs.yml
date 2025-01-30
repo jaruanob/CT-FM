@@ -1,0 +1,76 @@
+site_name: Vision Foundation Models for Computed Tomography
+
+theme: 
+  font:
+    code: Roboto Mono
+  name: 'material'
+  features:
+    - content.code.copy
+    - content.code.select
+    - header.autohide
+    - content.tooltips
+    - attr_list
+    - footnotes
+    - navigation.tabs
+    - navigation.footer
+
+  palette:
+    - scheme: slate
+      accent: blue
+extra_css:
+  - assets/extra.css
+
+
+# Plugins
+# Auto API reference generation: https://mkdocstrings.github.io/recipes/#automatic-code-reference-pages
+plugins:
+  - search
+  - autorefs
+  # - gen-files:
+  #     scripts:
+  #     - scripts/generate_api_reference_pages.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - section-index
+  - mkdocstrings:
+      handlers:
+        python:
+          docstring_style: google
+          options:
+            # Removed the default filter that excludes private members (that is, members whose names start with a single underscore).
+            filters: null     
+            show_source: true 
+                
+nav:
+  - 'index.md'
+  - 'Getting Started': 
+    - 'Installation': 'getting-started/installation.md'
+    - 'Quick Start': 'getting-started/quick-start.md'
+  - 'Replication Guide':
+    - 'Data Download and Preprocessing': 'replication-guide/data.md'
+    - 'Pre-training the FM': 'replication-guide/pretraining.md'
+    - 'Adapt the FM to downstream tasks': 'replication-guide/downstream.md'
+    - 'Baselines for downstream tasks': 'replication-guide/baselines.md'
+    - 'Extracting Features & Predictions': 'replication-guide/inference.md'
+    - 'Reproduce Analysis': 'replication-guide/analysis.md'
+    # - 'Training baselines': 'replication-guide/reproduce_baselines.md'
+  # - 'Tutorials': https://github.com/AIM-Harvard/foundation-cancer-image-biomarker/tree/master/tutorials
+  # - 'API Reference': 'reference/'
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+
+repo_url: https://github.com/project-lighter/CT-FM
+repo_name: project-lighter/CT-FM
+copyright: <a href="https://aim.hms.harvard.edu">AIM &copy; 2023</a>
+extra:
+  generator: false
