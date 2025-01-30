@@ -5,7 +5,7 @@
 
 
 
-![CT-FM Overview](./docs/assets/Figure1.png)
+![CT-FM Overview](./assets/Figure1.png)
 
 
 ## Introduction
