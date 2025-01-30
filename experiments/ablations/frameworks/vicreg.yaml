@@ -10,7 +10,7 @@ system#model:
       num_ftrs: '$@vars#NUM_FTRS_BY_BACKBONE[@vars#BACKBONE_NAME]'
       backbone:
 
-system#optimizer#lr: "$((@system#batch_size * @trainer#devices)/256) * 0.0007"
+system#optimizer#lr: "$((@system#dataloaders#train#batch_size * @trainer#devices)/256) * 0.0007"
 
 
 system#criterion:
