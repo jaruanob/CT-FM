@@ -58,8 +58,7 @@ coverage.xml
 # Django stuff:
 *.log
 local_settings.py
-db.sqlite3
-db.sqlite3-journal
+
 
 # Flask stuff:
 instance/
@@ -142,5 +141,4 @@ wandb/run-20241021_132235-l1t6exsj/files/requirements.txt
 wandb/run-20241021_132235-l1t6exsj/files/wandb-metadata.json
 wandb/run-20241021_132235-l1t6exsj/files/wandb-summary.json
 *.pt
-*.pkl
 *.torch
