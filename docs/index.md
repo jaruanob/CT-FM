@@ -15,4 +15,4 @@ This repository contains the code and resources for CT-FM, a 3D image-based pre-
 *   **Open Source:** Model weights, data, and code are shared for collaborative development.
 
 ## Training
-CT-FM largely relies on the [lighter](https://github.com/project-lighter/lighter) package. Detailed descriptions on running the pretraining and downstream task specific finetuning can be found in the [replication guide](./replication-guide)
+CT-FM largely relies on the [lighter](https://github.com/project-lighter/lighter) package. Detailed descriptions on running the pretraining and downstream task specific finetuning can be found in the [replication guide](./replication-guide/data.md)

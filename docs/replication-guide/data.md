@@ -10,7 +10,7 @@ For our pre-training experiments, we utilize 148,394 CT scans from the Imaging D
 
 Execute the provided SQL query on Google BigQuery to filter for CT scans that meet our quality constraints. The query performs necessary quality checks on each scan.
 
-- Query file: [query.sql](https://github.com/project-lighter/CT-FM/tree/main/tutorials/notebooks/notebooks/data-download/query.sql)
+- Query file: [query.sql](https://github.com/project-lighter/CT-FM/tree/main/notebooks/data-download/query.sql)
 
 Running this query returns a table with CT scan records that satisfy our criteria. We then convert these query results to a manifest file that can be used to download the data
 
@@ -19,7 +19,7 @@ This has already been done so you can skip to the next step if you don't want to
 
 After reviewing the query results, use the Jupyter Notebook to create a manifest file. This manifest lists every DICOM file that needs to be downloaded.
 
-- Manifest creation notebook: [prepare_download.ipynb](https://github.com/project-lighter/CT-FM/tree/main/tutorials/notebooks/data-download/prepare_download.ipyn)
+- Manifest creation notebook: [prepare_download.ipynb](https://github.com/project-lighter/CT-FM/tree/main/notebooks/data-download/prepare_download.ipynb)
 
 ### 3. Download the DICOM Files
 
@@ -59,6 +59,6 @@ The downloaded data is in DICOM format. To prepare it for your experiments, foll
 
 - **Packaging:** Finally, generate a `.pkl` file that lists the scans. This file serves as the required input for the pre-training experiments.
 
-For a complete example of these final steps, refer again to the [prepare_download.ipynb](https://github.com/project-lighter/CT-FM/tree/main/tutorials/notebooks/data-download/prepare_download.ipynb) notebook.
+For a complete example of these final steps, refer again to the [prepare_download.ipynb](https://github.com/project-lighter/CT-FM/tree/main/notebooks/data-download/prepare_download.ipynb) notebook.
 
 Following these instructions will replicate the data download and preprocessing pipeline used in our study, enabling you to work with the same CT scan dataset.

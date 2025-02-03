@@ -13,25 +13,28 @@ All configuration files for pre-training are located in the experiments director
 The final pre-training experiment uses three main configuration files from the [fm](https://github.com/project-lighter/CT-FM/tree/main/experiments/fm) folder:
 
 1. [base.yaml](https://github.com/project-lighter/CT-FM/tree/main/experiments/fm/base.yaml)
-   - This file establishes the core settings for pre-training the CT-FM model by defining:
+   This file establishes the core settings for pre-training the CT-FM model by defining:
      - **Variables:** Core parameters such as voxel spacing.
      - **Trainer Settings:** Parameters including 500 epochs, batch limits, GPU configuration, mixed precision, logging via WandB, and checkpoint callbacks.
      - **System Settings:** The model placeholder, optimizer (AdamW), learning rate scheduler (WarmupCosineSchedule), and dataloader setup for safely handling your dataset.
      - **Adapters:** Methods for batch processing and loss computation.
-   - In essence, base.yaml serves as the foundation upon which the entire pre-training process is built.
+    
+    In essence, base.yaml serves as the foundation upon which the entire pre-training process is built.
 
 2. [frameworks/intrasample_simclr.yaml](https://github.com/project-lighter/CT-FM/tree/main/experiments/fm/frameworks/intrasample_simclr.yaml)
-   - This file configures the self-supervised SimCLR framework used during pre-training. It includes:
+   This file configures the self-supervised SimCLR framework used during pre-training. It includes:
      - **Model & Criterion:** Defines the CT-FM model and applies a contrastive loss function with a specified temperature.
      - **Data Augmentation Pipeline:** Implements a series of transformations (such as random crops, flips, and intensity adjustments) to generate multiple augmented views from each input image.
-   - This configuration augments the base setup with specialized self-supervised learning components.
+    
+    This configuration augments the base setup with specialized self-supervised learning components.
 
 3. [backbones/segresenc.yaml](https://github.com/project-lighter/CT-FM/tree/main/experiments/fm/backbones/segresenc.yaml)
-   - This file sets up the backbone for the CT-FM model. It includes:
+   This file sets up the backbone for the CT-FM model. It includes:
      - **Backbone Identification:** Sets the variable "BACKBONE_NAME" to "SegResNetDS".
      - **Architectural Details:** Configures the SegResNet encoder (via monai.networks.nets.segresnet_ds.SegResEncoder) by specifying parameters like spatial dimensions, input channels, initial filters, and block structures.
      - **Integration with Base Config:** Uses shared variable mappings (such as NUM_FTRS_BY_BACKBONE) and logger identifiers from base.yaml to ensure smooth integration.
-   - This configuration provides the essential backbone architecture for complete model training.
+   
+   This configuration provides the essential backbone architecture for complete model training.
 
 ## Customization Before Training
 
