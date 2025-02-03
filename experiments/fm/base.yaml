@@ -63,7 +63,7 @@ system:
                 _target_: project.data.safe_dataset.SafeDataset
                 dataset:
                     _target_: monai.data.Dataset
-                    data: "$pickle.load(open('/mnt/ssd1/ibro/IDC_SSL_CT/dataset_list.pkl', 'rb'))"
+                    data: "$pickle.load(open('/mnt/ssd1/ibro/IDC_SSL_CT/scan_list.pkl', 'rb'))"
                     _requires_: "$import pickle"
                     transform:
 
