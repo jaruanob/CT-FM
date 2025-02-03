@@ -31,14 +31,13 @@ plugins:
   - literate-nav:
       nav_file: SUMMARY.md
   - section-index
-  - mkdocstrings:
-      handlers:
-        python:
-          docstring_style: google
-          options:
-            # Removed the default filter that excludes private members (that is, members whose names start with a single underscore).
-            filters: null     
-            show_source: true 
+  # - mkdocstrings:
+  #     handlers:
+  #       python:
+  #         options:
+  #           # Removed the default filter that excludes private members (that is, members whose names start with a single underscore).
+  #           filters: null     
+  #           show_source: true 
                 
 nav:
   - 'index.md'
