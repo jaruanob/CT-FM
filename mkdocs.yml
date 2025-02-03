@@ -14,11 +14,10 @@ theme:
     - navigation.tabs
     - navigation.footer
 
-  palette:
-    - scheme: slate
-      accent: blue
-extra_css:
-  - assets/extra.css
+  # palette:
+  #   - scheme: slate
+  #     accent: blue
+
 
 
 # Plugins
@@ -45,7 +44,6 @@ nav:
   - 'index.md'
   - 'Getting Started': 
     - 'Installation': 'getting-started/installation.md'
-    - 'Quick Start': 'getting-started/quick-start.md'
   - 'Replication Guide':
     - 'Data Download and Preprocessing': 'replication-guide/data.md'
     - 'Pre-training the FM': 'replication-guide/pretraining.md'
