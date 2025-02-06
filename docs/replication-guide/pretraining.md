@@ -4,11 +4,18 @@ Before you begin, ensure you have downloaded your data as explained in the [Data
 
 ## Pre-training Experiment Configurations
 
-All configuration files for pre-training are located in the experiments directory. In particular, check out two key folders:
+Pre-training configuration files are organized in the experiments directory. Explore the key folders below to find the setup that best meets your needs:
 
-- [ablations](https://github.com/project-lighter/CT-FM/tree/main/experiments/ablations) folder, which contains setups for testing various experimental approaches.
-- [fm](https://github.com/project-lighter/CT-FM/tree/main/experiments/fm) folder, which holds the finalized configurations for the pre-training run.
+<div class="grid cards" markdown>
 
+- **[Ablations](https://github.com/project-lighter/CT-FM/tree/main/experiments/ablations)**
+  *Setups for testing various experimental approaches.*
+
+- **[FM](https://github.com/project-lighter/CT-FM/tree/main/experiments/fm)**  
+  *Finalized configurations for the pre-training run.*
+</div>
+
+Leverage MkDocs Material’s interactive tools for an enhanced navigation experience.
 
 ## Final Pre-training Setup
 
@@ -17,9 +24,9 @@ All configuration files for pre-training are located in the experiments director
 After all adjustments have been made, navigate to the root directory of the CT-FM project and execute the following command to begin pre-training:
 
 
-```bash title="Pretraining command"
-lighter fit --config=./experiments/fm/base.yaml, #(1)!
-./experiments/fm/frameworks/intrasample_simclr.yaml, #(2)!
+```bash
+lighter fit --config=./experiments/fm/base.yaml,\ #(1)!
+./experiments/fm/frameworks/intrasample_simclr.yaml,\ #(2)!
 ./experiments/fm/backbones/segresenc.yaml #(3)!
 ```
 
@@ -41,16 +48,17 @@ lighter fit --config=./experiments/fm/base.yaml, #(1)!
       - **Integration with Base Config:** Uses shared variable mappings (such as `NUM_FTRS_BY_BACKBONE`) and logger identifiers from `base.yaml` to ensure smooth integration.
       This configuration provides the essential backbone architecture for complete model training.
 
-!!! note
-      Click on the :material-star-four-points-circle: symbols to learn more about each yaml file
+Click on the :material-star-four-points-circle: symbols to learn more about each yaml file
 
 ## Customization Before Training
 
-Before running the experiment, make sure to update a few paths in the `base.yaml` file:
-- Replace the paths for `save_dir` and `dirpath` with your chosen directories for saving logs and checkpoints.
-- Update the path to the `scan_list.pkl` file with the one generated during the data preparation phase.
+Before running the experiment, update your `base.yaml` configuration using the guidelines below:
 
-Additionally, adjust the training parameters under the `trainer:` key (such as the number of GPUs, batch size, and training duration) to suit your system’s resources and your experimental needs.
+!!! note "Directory Paths Update"
+    - Set the paths for `save_dir` and `dirpath` to your preferred locations for saving logs and checkpoints.
+    - Update the path for `scan_list.pkl` to reflect the file produced during the data preparation phase.
 
+!!! tip "Training Parameter Adjustments"
+    Modify the settings under the `trainer:` key (such as the number of GPUs, batch size, and training duration) to align with your system’s resources and experimental needs.
 
-This command starts the pre-training process using your customized configurations.
+After applying these customizations, execute the pre-training command to initiate the process with your updated configurations.

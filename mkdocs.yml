@@ -50,9 +50,9 @@ nav:
   - 'Replication Guide':
     - 'Data Download and Preprocessing': 'replication-guide/data.md'
     - 'Pre-training the FM': 'replication-guide/pretraining.md'
+    - 'Extracting Features & Predictions': 'replication-guide/inference.md'
     - 'Adapt the FM to downstream tasks': 'replication-guide/downstream.md'
     - 'Baselines for downstream tasks': 'replication-guide/baselines.md'
-    - 'Extracting Features & Predictions': 'replication-guide/inference.md'
     - 'Reproduce Analysis': 'replication-guide/analysis.md'
     # - 'Training baselines': 'replication-guide/reproduce_baselines.md'
   # - 'Tutorials': https://github.com/AIM-Harvard/foundation-cancer-image-biomarker/tree/master/tutorials
@@ -80,3 +80,7 @@ repo_name: project-lighter/CT-FM
 copyright: <a href="https://aim.hms.harvard.edu">AIM &copy; 2023</a>
 extra:
   generator: false
+
+
+extra_javascript:
+  - js/sh-annotation.js  
