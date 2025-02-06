@@ -14,5 +14,43 @@ This repository contains the code and resources for CT-FM, a 3D image-based pre-
 *   **Task-Agnostic Training:** Enabling transferability across various radiological tasks.
 *   **Open Source:** Model weights, data, and code are shared for collaborative development.
 
-## Training
-CT-FM largely relies on the [lighter](https://github.com/project-lighter/lighter) package. Detailed descriptions on running the pretraining and downstream task specific finetuning can be found in the [replication guide](./replication-guide/data.md)
+<br/>
+<br/>
+
+## Quick Links
+<div class="grid cards" markdown>
+
+-   __Downloading Data__
+
+    ---
+
+    All datasets used in the study are public
+
+    [:octicons-arrow-right-24: Download data](./replication-guide/data.md)
+
+-    __Use CT-FM models__
+
+    ---
+    CT-FM feature extractors and trained downstream 
+    models are available on HF
+
+    
+
+    [:octicons-arrow-right-24: Go to HF](https://huggingface.co/project-lighter)
+
+-   __Reproduce our pre-training framework__
+
+    ---
+
+    Implement our pre-training method on your own data
+
+    [:octicons-arrow-right-24: Pretraining instructions](./replication-guide/pretraining.md)
+
+-   __Build your projects using Lighter__
+
+    ---
+
+    Almost all CT-FM experiments use Lighter as the configuration system
+    [:octicons-arrow-right-24: Explore here](https://github.com/project-lighter/lighter)
+
+</div>

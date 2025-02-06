@@ -10,7 +10,7 @@ For our pre-training experiments, we utilize 148,394 CT scans from the Imaging D
 
 Execute the provided SQL query on Google BigQuery to filter for CT scans that meet our quality constraints. The query performs necessary quality checks on each scan.
 
-- Query file: [query.sql](https://github.com/project-lighter/CT-FM/tree/main/notebooks/data-download/query.sql)
+[Query file](https://github.com/project-lighter/CT-FM/tree/main/notebooks/data-download/query.sql){ .md-button }
 
 Running this query returns a table with CT scan records that satisfy our criteria. We then convert these query results to a manifest file that can be used to download the data
 
@@ -19,7 +19,7 @@ This has already been done so you can skip to the next step if you don't want to
 
 After reviewing the query results, use the Jupyter Notebook to create a manifest file. This manifest lists every DICOM file that needs to be downloaded.
 
-- Manifest creation notebook: [prepare_download.ipynb](https://github.com/project-lighter/CT-FM/tree/main/notebooks/data-download/prepare_download.ipynb)
+[Manifest creation notebook](https://github.com/project-lighter/CT-FM/tree/main/notebooks/data-download/prepare_download.ipynb){ .md-button }
 
 ### 3. Download the DICOM Files
 
@@ -42,23 +42,34 @@ This command downloads all the specified DICOM files into the designated directo
 The downloaded data is in DICOM format. To prepare it for your experiments, follow these steps:
 
 - **Sorting:** Organize the DICOM files using the tool "dicomsort". While the specific usage may depend on your environment, a common workflow involves running a command to categorize files by patient or study. For example, you might first list the files and then run:
-  
-  ```
-  dicomsort [options...] sourceDir targetDir/<patterns>
-  ```
-  
-  For more detailed instructions and options, please refer to the [thedicomsort GitHub repository](https://github.com/pieper/dicomsort) 
+    
+    ```
+    dicomsort [options...] sourceDir targetDir/<patterns>
+    ```
+    
+    For more detailed instructions and options, please refer to the [thedicomsort GitHub repository](https://github.com/pieper/dicomsort) 
 
 - **Conversion:** Convert the sorted DICOM files to NRRD format using Plastimatch. A typical command looks similar to:
-  
-  ```
-  plastimatch convert --input <SORTED_DIR> --output <CONVERTED_DIR> --format nrrd
-  ```
-  
-  For additional details and advanced options, consult the [Plastimatch documentation](http://plastimatch.org) or relevant online resources.
+    
+    ```
+    plastimatch convert --input <SORTED_DIR> --output <CONVERTED_DIR> --format nrrd
+    ```
+    
+    For additional details and advanced options, consult the [Plastimatch documentation](http://plastimatch.org) or relevant online resources.
 
 - **Packaging:** Finally, generate a `.pkl` file that lists the scans. This file serves as the required input for the pre-training experiments.
 
 For a complete example of these final steps, refer again to the [prepare_download.ipynb](https://github.com/project-lighter/CT-FM/tree/main/notebooks/data-download/prepare_download.ipynb) notebook.
 
 Following these instructions will replicate the data download and preprocessing pipeline used in our study, enabling you to work with the same CT scan dataset.
+
+
+## Downstream Tasks Data
+
+We use several publicly available datasets for our downstream tasks, including:
+
+- **Whole Body Segmentation:** [TotalSegmentator-v2 dataset](https://zenodo.org/records/8367088)
+- **Tumor Segmentation:** [MSD dataset](http://medicaldecathlon.com/dataaws/)
+- **Head CT Triage:** [SinoCT](https://stanfordaimi.azurewebsites.net/datasets?domain=HEAD%2FBRAIN%2FNECK) and [CQ500](https://academictorrents.com/details/47e9d8aab761e75fd0a81982fa62bddf3a173831)
+- **Medical Image Retrieval:** [3D-MIR](http://medicaldecathlon.com/dataaws/) and [OrganMNIST-3D](https://zenodo.org/records/10519652)
+- **Stability Testing:** [RIDER](https://www.cancerimagingarchive.net/collection/rider-lung-ct/)

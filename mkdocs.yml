@@ -13,6 +13,10 @@ theme:
     - footnotes
     - navigation.tabs
     - navigation.footer
+    - content.code.annotate    
+  icon:
+    annotation: material/star-four-points-circle
+
 
   # palette:
   #   - scheme: slate
@@ -65,6 +69,11 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg  
 
 repo_url: https://github.com/project-lighter/CT-FM
 repo_name: project-lighter/CT-FM
