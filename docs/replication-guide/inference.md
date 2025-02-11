@@ -14,10 +14,11 @@ pip install lighter-zoo
 ## Available Models
 
 <div class="grid cards" markdown>
-- **[project-lighter/ct_fm_feature_extractor](https://huggingface.co/project-lighter/ct_fm_feature_extractor)**  
+
+- **[:octicons-arrow-right-24: project-lighter/ct_fm_feature_extractor](https://huggingface.co/project-lighter/ct_fm_feature_extractor)**  
   Extract deep features efficiently from CT scans.
 
-- **[project-lighter/whole_body_segmentation](https://huggingface.co/project-lighter/whole_body_segmentation)**  
+- **[:octicons-arrow-right-24: project-lighter/whole_body_segmentation](https://huggingface.co/project-lighter/whole_body_segmentation)**  
   Generate comprehensive segmentation maps for radiological analysis.
 </div>
 

@@ -67,9 +67,22 @@ Following these instructions will replicate the data download and preprocessing 
 ## Downstream Tasks Data
 
 We use several publicly available datasets for our downstream tasks, including:
+<div class="grid cards" markdown>
 
-- **Whole Body Segmentation:** [TotalSegmentator-v2 dataset](https://zenodo.org/records/8367088)
-- **Tumor Segmentation:** [MSD dataset](http://medicaldecathlon.com/dataaws/)
-- **Head CT Triage:** [SinoCT](https://stanfordaimi.azurewebsites.net/datasets?domain=HEAD%2FBRAIN%2FNECK) and [CQ500](https://academictorrents.com/details/47e9d8aab761e75fd0a81982fa62bddf3a173831)
-- **Medical Image Retrieval:** [3D-MIR](http://medicaldecathlon.com/dataaws/) and [OrganMNIST-3D](https://zenodo.org/records/10519652)
-- **Stability Testing:** [RIDER](https://www.cancerimagingarchive.net/collection/rider-lung-ct/)
+- **Whole Body Segmentation:**  
+  [:octicons-arrow-right-24: TotalSegmentator-v2 dataset](https://zenodo.org/records/8367088)
+
+- **Tumor Segmentation:**  
+  [:octicons-arrow-right-24: MSD dataset](http://medicaldecathlon.com/dataaws/)
+
+- **Head CT Triage:**  
+  [:octicons-arrow-right-24: SinoCT](https://stanfordaimi.azurewebsites.net/datasets?domain=HEAD%2FBRAIN%2FNECK)  
+  [:octicons-arrow-right-24: CQ500](https://academictorrents.com/details/47e9d8aab761e75fd0a81982fa62bddf3a173831)
+
+- **Medical Image Retrieval:**  
+  [:octicons-arrow-right-24: 3D-MIR](http://medicaldecathlon.com/dataaws/)  
+  [:octicons-arrow-right-24: OrganMNIST-3D](https://zenodo.org/records/10519652)
+
+- **Stability Testing:**  
+  [:octicons-arrow-right-24: RIDER](https://www.cancerimagingarchive.net/collection/rider-lung-ct/)
+</div>

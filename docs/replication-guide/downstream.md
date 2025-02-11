@@ -8,23 +8,24 @@ In line with the configuration-based approach detailed in [Pretraining](./pretra
 
 [View All Scripts](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts){.md-button}
 
-
+<br/>
 For TotalSeg experiments, refer to the scripts in the totalseg folder:
 <div class="grid cards" markdown>
+
 - **Full Finetuning on TotalSegmentatorV2:**  
-  [fulltune.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/fulltune.sh)
+  [:octicons-arrow-right-24: fulltune.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/fulltune.sh)
 
 - **Finetuning on the Merlin Split:**  
-  [merlin.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/merlin.sh)
+  [:octicons-arrow-right-24: merlin.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/merlin.sh)
 
 - **Few-Shot Fine-Tuning:**  
-  [fewshot.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/fewshot.sh)
+  [:octicons-arrow-right-24: fewshot.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/fewshot.sh)
 
 - **Pre-Training Checkpoint Selection:**  
-  [checkpoint_selection.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/checkpoint_selection.sh)
+  [:octicons-arrow-right-24: checkpoint_selection.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/checkpoint_selection.sh)
 
 - **Pre-Training Ablations:**  
-  [pretraining_evaluation.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/pretraining_evaluation.sh)
+  [:octicons-arrow-right-24: pretraining_evaluation.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/pretraining_evaluation.sh)
 </div>
 
 !!! tip "Enabling Prediction Mode"
@@ -34,23 +35,23 @@ For TotalSeg experiments, refer to the scripts in the totalseg folder:
     - Append the prediction override configuration file `./evaluation/overrides/totalseg_predict_overrides.yaml` to your config list.
     - Remove the `--trainer#callbacks#0#until_epoch=0` flag since the new callback now handles prediction mode.
 
-**Example Transformation:**
+    **Example Transformation:**
 
-Original command:
-```
-lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_vista.yaml,./evaluation/baselines/segresnetds_ctfm.yaml --trainer#callbacks#0#until_epoch=0 --vars#name="ct_fm" --vars#project="totalseg" --system#model#trunk#ckpt_path=$ct_fm_path --vars#wandb_group='vista_v2'
-```
+    Original command:
+    ```
+    lighter fit --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_vista.yaml,./evaluation/baselines/segresnetds_ctfm.yaml --trainer#callbacks#0#until_epoch=0 --vars#name="ct_fm" --vars#project="totalseg" --system#model#trunk#ckpt_path=$ct_fm_path --vars#wandb_group='vista_v2'
+    ```
 
-Modified prediction command:
-```
-lighter predict --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_vista.yaml,./evaluation/baselines/segresnetds_ctfm.yaml,./evaluation/overrides/totalseg_predict_overrides.yaml --vars#name="ct_fm" --vars#project="totalseg" --vars#wandb_group='vista_v2'
-```
+    Modified prediction command:
+    ```
+    lighter predict --config=./evaluation/totalseg.yaml,./evaluation/overrides/totalseg_vista.yaml,./evaluation/baselines/segresnetds_ctfm.yaml,./evaluation/overrides/totalseg_predict_overrides.yaml --vars#name="ct_fm" --vars#project="totalseg" --vars#wandb_group='vista_v2'
+    ```
 
-By default the predict command uses the checkpoint location mentioned while running the fit pipeline.
-If you have a different checkpoint location, to override the model checkpoint directory during prediction, add:
-```
---args#predict#ckpt_path=<path>
-```
+    By default the predict command uses the checkpoint location mentioned while running the fit pipeline.
+    If you have a different checkpoint location, to override the model checkpoint directory during prediction, add:
+    ```
+    --args#predict#ckpt_path=<path>
+    ```
 
 ## Tumor Segmentation with Auto3DSeg
 
