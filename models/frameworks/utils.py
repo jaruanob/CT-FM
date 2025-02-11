@@ -17,7 +17,7 @@ def sequence_forward(obj, x):
         if isinstance(sample, torch.Tensor):
             out.append(tensor_forward(obj, sample))
         elif isinstance(sample, tuple) or isinstance(sample, list):
-            out.append(sequence_forward(sample))
+            out.append(sequence_forward(obj, sample))
     return out
 
 

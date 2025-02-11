@@ -50,7 +50,7 @@ class SimSiam(nn.Module):
                 If the input is a tuple or a list, a list is returned.
         """
         if isinstance(input, torch.Tensor):
-            return tensor_forward(input)
+            return tensor_forward(self, input)
 
         if isinstance(input, tuple) or isinstance(input, list):
-            return sequence_forward(input)
+            return sequence_forward(self, input)

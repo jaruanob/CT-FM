@@ -100,7 +100,6 @@ system#dataloaders#train#dataset#dataset#transform:
                 track_meta: False
               - _target_: monai.transforms.Lambda
                 func: '$lambda x: (x["view_0"], x["view_1"])'
-
         # Disable map_items so that the whole list of NUM_CONTRASTIVE_CROPS Tensors is wrapped into input instead of its elements
         - _target_: monai.transforms.Compose
           map_items: False
