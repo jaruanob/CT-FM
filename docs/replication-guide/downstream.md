@@ -54,7 +54,9 @@ If you have a different checkpoint location, to override the model checkpoint di
 
 ## Tumor Segmentation with Auto3DSeg
 
-Tumor segmentation is performed using Auto3DSeg—a robust segmentation workflow provided by MONAI. This pipeline is designed to simplify segmentation tasks and can be explored further in the official [MONAI Auto3DSeg Tutorial](https://github.com/Project-MONAI/tutorials/blob/main/auto3dseg/README.md).
+Tumor segmentation is performed using Auto3DSeg—a robust segmentation workflow provided by MONAI. This pipeline is designed to simplify segmentation tasks and can be explored further in the official link below
+
+[MONAI Auto3DSeg Tutorial](https://github.com/Project-MONAI/tutorials/blob/main/auto3dseg/README.md){.md-button}
 
 ### Workflow Overview
 
@@ -75,3 +77,13 @@ These adjustments allow us to directly benchmark the effectiveness of the pre-tr
 !!! tip "Customizing Your Pipeline"
     By simply modifying the orientation and specifying the checkpoint path, you can leverage the power of pre-trained models in the Auto3DSeg setup. This makes it easy to compare different configurations and accelerate your experimentation process.
 
+
+## Head Triage CT classification
+:material-progress-clock: Coming soon...
+
+
+<br/>
+<br/>
+
+!!! tip "Zero-shot evaluation"
+    All the zero shot eval can be found on the [reproduce analysis page](./analysis.md)
