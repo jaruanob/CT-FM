@@ -2,7 +2,10 @@ site_name: Vision Foundation Models for Computed Tomography
 
 theme: 
   font:
-    code: Roboto Mono
+    icon:
+      repo: fontawesome/brands/github
+    font:
+      code: Roboto Mono  
   name: 'material'
   features:
     - content.code.copy
@@ -17,11 +20,26 @@ theme:
   icon:
     annotation: material/star-four-points-circle
 
+  palette:
+    # Palette toggle for automatic mode
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: fontawesome/solid/circle-half-stroke
+        name: Switch to light mode
 
-  # palette:
-  #   - scheme: slate
-  #     accent: blue
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default 
+      toggle:
+        icon: fontawesome/solid/lightbulb
+        name: Switch to dark mode
 
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: fontawesome/solid/moon
+        name: Switch to system preference
 
 
 # Plugins
@@ -45,12 +63,11 @@ plugins:
                 
 nav:
   - 'index.md'
-  - 'Getting Started': 
-    - 'Installation': 'getting-started/installation.md'
+  - 'Getting Started': 'getting-started/using_ctfm.md'
   - 'Replication Guide':
+    - 'Installation': 'replication-guide/installation.md'
     - 'Data Download and Preprocessing': 'replication-guide/data.md'
     - 'Pre-training the FM': 'replication-guide/pretraining.md'
-    - 'Extracting Features & Predictions': 'replication-guide/inference.md'
     - 'Adapt the FM to downstream tasks': 'replication-guide/downstream.md'
     - 'Baselines for downstream tasks': 'replication-guide/baselines.md'
     - 'Reproduce Analysis': 'replication-guide/analysis.md'
@@ -83,4 +100,7 @@ extra:
 
 
 extra_javascript:
-  - js/sh-annotation.js  
+  - assets/sh-annotation.js  
+
+extra_css:
+  - assets/extra.css
