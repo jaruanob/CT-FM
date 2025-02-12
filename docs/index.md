@@ -5,11 +5,10 @@
 
 ![CT-FM Overview](./assets/Figure1.png)
 
-## Introduction
+## Brief
 This repository contains the code and resources for CT-FM, a 3D image-based pre-trained foundation model designed for various radiological tasks. CT-FM is trained using self-supervised learning (SSL) on a large dataset of 148,000 CT scans. This model aims to address a range of tasks, including whole-body segmentation, tumor segmentation, head CT triage, and medical image retrieval. This work builds upon previous efforts in radiological AI, shifting from task-specific expert models to unified foundation models for broader adaptability and efficiency.
 
 ## Key Innovations
-
 *   **Large-Scale 3D Pretraining:** Emphasis on 3D data rather than traditional 2D datasets.
 *   **Task-Agnostic Training:** Enabling transferability across various radiological tasks.
 *   **Open Source:** Model weights, data, and code are shared for collaborative development.
@@ -50,7 +49,10 @@ This repository contains the code and resources for CT-FM, a 3D image-based pre-
 
     ---
 
-    Almost all CT-FM experiments use Lighter as the configuration system
-    [:octicons-arrow-right-24: Explore here](https://github.com/project-lighter/lighter)
+    CT-FM ♥ Lighter <br/>
+    All pre-training is performed using lighter
+    [:octicons-arrow-right-24: Explore here](https://project-lighter.github.io/lighter)
 
 </div>
+
+

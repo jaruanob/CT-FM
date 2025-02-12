@@ -1,6 +1,6 @@
 # Pre-training CT-FM
 
-Before you begin, ensure you have downloaded your data as explained in the [Data Instructions](./data.md). It is also a good idea to review the [lighter documentation](https://github.com/project-lighter/lighter) since our training configurations are based on its guidelines.
+Before you begin, ensure you have downloaded your data as explained in the [Data Instructions](./data.md). It is also a good idea to review the [lighter documentation](https://project-lighter.github.io/lighter) since our training configurations are based on its guidelines.
 
 ## Pre-training Experiment Configurations
 
