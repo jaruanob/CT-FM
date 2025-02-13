@@ -10,7 +10,7 @@ pip install lighter-zoo
 ```
 
 !!! tip "Quick Start"
-    For detailed examples and further guidance, visit our [Project Lighter page on Hugging Face](https://huggingface.co/project-lighter) [^1].
+    For detailed examples and further guidance, visit our [Project Lighter page on Hugging Face](https://huggingface.co/project-lighter)
 
 ## Available Models
 
@@ -25,5 +25,3 @@ pip install lighter-zoo
 - **[:octicons-arrow-right-24: project-lighter/whole_body_segmentation](https://huggingface.co/project-lighter/whole_body_segmentation)**  
   Generate comprehensive segmentation maps for radiological analysis.
 </div>
-
-[^1]: Information adapted from [Hugging Face Project Lighter](https://huggingface.co/project-lighter).
