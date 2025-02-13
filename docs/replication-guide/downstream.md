@@ -6,26 +6,26 @@ Our pre-trained CT-FM model has been adapted to three fine-tuned downstream task
 
 In line with the configuration-based approach detailed in [Pretraining](./pretraining.md), we provide YAML config files for downstream adaptation. To facilitate thorough comparisons, a suite of shell scripts with the relevant configuration components is available. These can be found in the [evaluation](https://github.com/project-lighter/CT-FM/tree/main/evaluation) directory under “scripts.”
 
-[View All Scripts](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts){.md-button}
+[:material-github: View All Scripts](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts){.md-button}
 
 <br/>
 For TotalSeg experiments, refer to the scripts in the totalseg folder:
 <div class="grid cards" markdown>
 
 - **Full Finetuning on TotalSegmentatorV2:**  
-  [:octicons-arrow-right-24: fulltune.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/fulltune.sh)
+  [:octicons-arrow-right-24: :material-github: fulltune.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/fulltune.sh)
 
 - **Finetuning on the Merlin Split:**  
-  [:octicons-arrow-right-24: merlin.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/merlin.sh)
+  [:octicons-arrow-right-24: :material-github: merlin.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/merlin.sh)
 
 - **Few-Shot Fine-Tuning:**  
-  [:octicons-arrow-right-24: fewshot.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/fewshot.sh)
+  [:octicons-arrow-right-24: :material-github: fewshot.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/fewshot.sh)
 
 - **Pre-Training Checkpoint Selection:**  
-  [:octicons-arrow-right-24: checkpoint_selection.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/checkpoint_selection.sh)
+  [:octicons-arrow-right-24: :material-github: checkpoint_selection.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/checkpoint_selection.sh)
 
 - **Pre-Training Ablations:**  
-  [:octicons-arrow-right-24: pretraining_evaluation.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/pretraining_evaluation.sh)
+  [:octicons-arrow-right-24: :material-github: pretraining_evaluation.sh](https://github.com/project-lighter/CT-FM/tree/main/evaluation/scripts/totalseg/pretraining_evaluation.sh)
 </div>
 
 !!! tip "Enabling Prediction Mode"
@@ -57,7 +57,7 @@ For TotalSeg experiments, refer to the scripts in the totalseg folder:
 
 Tumor segmentation is performed using Auto3DSeg—a robust segmentation workflow provided by MONAI. This pipeline is designed to simplify segmentation tasks and can be explored further in the official link below
 
-[MONAI Auto3DSeg Tutorial](https://github.com/Project-MONAI/tutorials/blob/main/auto3dseg/README.md){.md-button}
+[:material-github: MONAI Auto3DSeg Tutorial](https://github.com/Project-MONAI/tutorials/blob/main/auto3dseg/README.md){.md-button}
 
 ### Workflow Overview
 

@@ -10,7 +10,7 @@ For our pre-training experiments, we utilize 148,394 CT scans from the Imaging D
 
 Execute the provided SQL query on Google BigQuery to filter for CT scans that meet our quality constraints. The query performs necessary quality checks on each scan.
 
-[Query file](https://github.com/project-lighter/CT-FM/tree/main/notebooks/data-download/query.sql){ .md-button }
+[:material-github: Query file](https://github.com/project-lighter/CT-FM/tree/main/notebooks/data-download/query.sql){ .md-button }
 
 Running this query returns a table with CT scan records that satisfy our criteria. We then convert these query results to a manifest file that can be used to download the data
 
@@ -19,7 +19,7 @@ This has already been done so you can skip to the next step if you don't want to
 
 After reviewing the query results, use the Jupyter Notebook to create a manifest file. This manifest lists every DICOM file that needs to be downloaded.
 
-[Manifest creation notebook](https://github.com/project-lighter/CT-FM/tree/main/notebooks/data-download/prepare_download.ipynb){ .md-button }
+[:material-github: Manifest creation notebook](https://github.com/project-lighter/CT-FM/tree/main/notebooks/data-download/prepare_download.ipynb){ .md-button }
 
 ### 3. Download the DICOM Files
 
