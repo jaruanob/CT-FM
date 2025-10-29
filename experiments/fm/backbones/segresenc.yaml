@@ -3,8 +3,13 @@ vars#BACKBONE_NAME: SegResNetDS
 # This architecture is used by SimCLR and VicRegL.
 system#model#backbone:
     _target_: monai.networks.nets.segresnet_ds.SegResEncoder
+    # pretrained_model_name_or_path:: $f"/home/vlab/Documents/Repositories/Foundational_models/CT-FM/checkpoints/ct_fm_feature_extractor.pth"
+    # adjust_prefix_and_load_state_dict(model, ckpt_path, ckpt_to_model_prefix=None, layers_to_ignore=None
+    _post_init_: "$lambda model: (model.load_state_dict(__import__('torch').load('checkpoints/ct_fm_feature_extractor.pth')), model)[1]"
+
     spatial_dims: 3
     in_channels: 1
     init_filters: 32
     blocks_down: [1, 2, 2, 4, 4]
     head_module: "$lambda x: x[-1]"
+   
