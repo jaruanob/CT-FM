@@ -2,7 +2,8 @@ vars#BACKBONE_NAME: SegResNetDS
 
 # This architecture is used by SimCLR and VicRegL.
 system#model#backbone:
-    _target_: monai.networks.nets.segresnet_ds.SegResEncoder
+    _target_: project.experiments.fm.backbones.SegResEncoder.load_model
+    path: $f"{@vars#PRETRAINED_WEIGHTS_PATH}"
     spatial_dims: 3
     in_channels: 1
     init_filters: 32

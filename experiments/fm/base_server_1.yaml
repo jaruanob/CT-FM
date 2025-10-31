@@ -2,8 +2,7 @@ project: .
 vars:
     NUM_FTRS_BY_BACKBONE: {"SegResNetDS": 512, "ResNet50x2": 4096}
     SPACING: [3, 1, 1]
-    ROOT_EXPERIMENT_PATH: $f"/home/vlab/Documents/Repositories/Foundational_models/Experiments/CT-FM/1761836339"
-    PRETRAINED_WEIGHTS_PATH: $f"/home/vlab/Documents/Repositories/Foundational_models/Experiments/CT-FM/released_checkpoints/ct_fm_feature_extractor.pth"
+
 trainer:
     _target_: pytorch_lightning.Trainer
     benchmark: True
@@ -11,26 +10,31 @@ trainer:
     max_epochs: 500
     # limit_train_batches: 500
     accelerator: gpu
-    devices: 1
+    devices: [0,1]
     strategy: ddp
     sync_batchnorm: True
     precision: 16-mixed
-    log_every_n_steps: 20
-    check_val_every_n_epoch: 1
+    log_every_n_steps: 100
     logger: 
         _target_: pytorch_lightning.loggers.WandbLogger
         name: $f"CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
         project: CT_FM
-        save_dir: $f"{@vars#ROOT_EXPERIMENT_PATH}/logs/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
+        save_dir: $f"/data/home/jaruanob/Documents/Repositories/Foundational_models/Experiments/CT-FM/1761820031/logs/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
   
     callbacks:
-        #Save the last checkpoint
+        # Save the last checkpoint
         - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-          dirpath: $f"{@vars#ROOT_EXPERIMENT_PATH}/checkpoints/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
+          dirpath: $f"/data/home/jaruanob/Documents/Repositories/Foundational_models/Experiments/CT-FM/1761820031/checkpoints/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
           save_last: True
-          save_top_k: 1
           verbose: True
           every_n_epochs: 1
+        # Save a checkpoint every 10 epochs
+        - _target_: pytorch_lightning.callbacks.ModelCheckpoint
+          dirpath: $f"/data/home/jaruanob/Documents/Repositories/Foundational_models/Experiments/CT-FM/1761820031/checkpoints/CT_FM_{@vars#FRAMEWORK}_{@vars#BACKBONE_NAME}"
+          save_last: False
+          save_top_k: -1
+          verbose: True
+          every_n_epochs: 10
 system:
     _target_: lighter.System
 
@@ -52,41 +56,20 @@ system:
     dataloaders:
         train:
             _target_: torch.utils.data.DataLoader
-            batch_size: 1
+            batch_size: 4
             pin_memory: True
-            num_workers: 2        
+            num_workers: 5        
             dataset:
                 _target_: project.data.safe_dataset.SafeDataset
                 dataset:
                     _target_: monai.data.Dataset
-                    data: "$pickle.load(open(@vars#ROOT_EXPERIMENT_PATH + '/scan_list-CT-FM_data_v1_train.pkl', 'rb'))"
+                    data: "$pickle.load(open('/data/home/jaruanob/Documents/Repositories/Foundational_models/Experiments/CT-FM/1761820031/scan_list-CT-FM_data_v1.pkl', 'rb'))"
                     _requires_: "$import pickle"
                     transform:
 
-        val:
-            _target_: torch.utils.data.DataLoader
-            batch_size: 1
-            pin_memory: True
-            num_workers: 2        
-            dataset:
-                _target_: project.data.safe_dataset.SafeDataset
-                dataset:
-                    _target_: monai.data.Dataset
-                    data: "$pickle.load(open(@vars#ROOT_EXPERIMENT_PATH + '/scan_list-CT-FM_data_v1_validation.pkl', 'rb'))"
-                    _requires_: "$import pickle"
-                    transform:
 
     adapters:
         train:
-            batch:
-                _target_: lighter.adapters.BatchAdapter
-                input_accessor: "input"
-
-            criterion:
-                _target_: lighter.adapters.CriterionAdapter
-                pred_argument: 0
-
-        val:
             batch:
                 _target_: lighter.adapters.BatchAdapter
                 input_accessor: "input"
